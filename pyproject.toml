@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "M2K_YouTube_Scraper"
+version = "0.0.1"
+authors = [
+    {name = "Spencer Fietz", email = "spencer.fietz@ucalgary.ca"}
+]
+description = "A package for use in M2K research projects to collect YouTube ads to train ML models to monitor ads"
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Natural Language :: English",
+    "Development Status :: 1 - Planning"
+]
+dependencies = [
+#TODO Fill list with dependencies as build goes
+"selenium"
+]
+
+[project.scripts]
+scrape = "youtube_scraper.scrape:entrypoint"
