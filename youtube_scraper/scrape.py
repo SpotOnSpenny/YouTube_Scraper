@@ -12,9 +12,13 @@ def entrypoint():
     print("----- Welcome to the M2K YouTube Ad Scraper -----\n")
     print("This program is designed to scrape a fresh YouTube window for ads based on your defined search term.\n")
     user_term = input("To begin, please enter the search term you'd like to browse for ads:\n")
+    download_target = input("Next, please specify a number of ")
     driver = webdriver.Chrome()
     get_youtube(driver)
     search_and_click(driver, user_term)
+    # ^ Above gets to first video, Below checks for ad, and goes to next video
+    downloaded_ads = 0
+
     pass
 
 # ----- Starts WebClient and Retreives Youtube -----
