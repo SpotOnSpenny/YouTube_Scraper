@@ -12,11 +12,10 @@ def entrypoint():
     print("----- Welcome to the M2K YouTube Ad Scraper -----\n")
     print("This program is designed to scrape a fresh YouTube window for ads based on your defined search term.\n")
     user_term = input("To begin, please enter the search term you'd like to browse for ads:\n")
-    download_target = input("Next, please specify a number of ads that you would like to scrape")
+    download_target = input("Next, please specify a number of ads that you would like to scrape:\n")
     driver = webdriver.Chrome()
     get_youtube(driver)
     search_and_click(driver, user_term)
-    # ^ Above gets to first video, Below checks for ad, and goes to next video
     downloaded_ads = 0
     clicks = 1
     while downloaded_ads < int(download_target):
@@ -68,11 +67,11 @@ def check_for_ad(driver, clicks):
         return False
     else:
         print("Ad found!")
+        download_ad(driver)
         related_vids = driver.find_elements(By.TAG_NAME, "ytd-compact-video-renderer")
         number_of_related = len(related_vids)
-        random_vid = random.randint(0, number_of_related)
+        random_vid = random.randint(0, number_of_related - 1)
         print("Found {} related videos on page one, clicking on video number {}".format(number_of_related, random_vid))
-        #TODO download logic will go here
         video_title = related_vids[random_vid].find_element(By.ID, "video-title").text
         related_vids[random_vid].click()
         WebDriverWait(driver, 5).until(EC.title_contains(video_title)) #don't move on until next video page loaded
@@ -81,3 +80,7 @@ def check_for_ad(driver, clicks):
 #TODO Clicked a channel, gotta fix that
 #TODO Can't find video title, gotta figure that out
 #TODO Add logic to download ad
+
+def download_ad(driver):
+    ad_id_sCPN = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CLASS_NAME, "html5-video-info-panel-content")))
+    print(ad_id_sCPN)
