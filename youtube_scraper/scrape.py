@@ -12,14 +12,24 @@ def entrypoint():
     print("----- Welcome to the M2K YouTube Ad Scraper -----\n")
     print("This program is designed to scrape a fresh YouTube window for ads based on your defined search term.\n")
     user_term = input("To begin, please enter the search term you'd like to browse for ads:\n")
-    download_target = input("Next, please specify a number of ")
+    download_target = input("Next, please specify a number of ads that you would like to scrape")
     driver = webdriver.Chrome()
     get_youtube(driver)
     search_and_click(driver, user_term)
     # ^ Above gets to first video, Below checks for ad, and goes to next video
     downloaded_ads = 0
-
-    pass
+    clicks = 1
+    while downloaded_ads < int(download_target):
+        result = check_for_ad(driver, clicks)
+        if result == True:
+            downloaded_ads += 1
+            clicks += 1
+        else:
+            clicks += 1
+    print("successfully found {} ads, exiting script.".format(download_target))
+    exit()
+#TODO Add error handling and logging
+#TODO Add verification of user inputs
 
 # ----- Starts WebClient and Retreives Youtube -----
 def get_youtube(driver): 
@@ -43,10 +53,31 @@ def search_and_click(driver, search_term):
     pass
 #TODO add error handling and logging
 
-def wait_for_ad():
-    #TODO write script that checks to see if there's an ad
-    pass
-
-def download_ad():
-    #TODO write script that downloads ad once on has been found
-    pass
+def check_for_ad(driver, clicks):
+    try:
+        WebDriverWait(driver, timeout=5).until(EC.presence_of_element_located((By.CLASS_NAME, "ytp-ad-player-overlay")))
+    except:
+        print("No ad found, moving to related video #{}".format(clicks))
+        related_vids = driver.find_elements(By.TAG_NAME, "ytd-compact-video-renderer")
+        number_of_related = len(related_vids)
+        random_vid = random.randint(0, number_of_related)
+        print("Found {} related videos on page one, clicking on video number {}".format(number_of_related, random_vid))
+        video_title = related_vids[random_vid].find_element(By.ID, "video-title").text
+        related_vids[random_vid].click()
+        WebDriverWait(driver, 5).until(EC.title_contains(video_title)) #don't move on until next video page loaded
+        return False
+    else:
+        print("Ad found!")
+        related_vids = driver.find_elements(By.TAG_NAME, "ytd-compact-video-renderer")
+        number_of_related = len(related_vids)
+        random_vid = random.randint(0, number_of_related)
+        print("Found {} related videos on page one, clicking on video number {}".format(number_of_related, random_vid))
+        #TODO download logic will go here
+        video_title = related_vids[random_vid].find_element(By.ID, "video-title").text
+        related_vids[random_vid].click()
+        WebDriverWait(driver, 5).until(EC.title_contains(video_title)) #don't move on until next video page loaded
+        return True
+    
+#TODO Clicked a channel, gotta fix that
+#TODO Can't find video title, gotta figure that out
+#TODO Add logic to download ad
