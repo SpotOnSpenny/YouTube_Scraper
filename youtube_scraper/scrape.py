@@ -7,38 +7,46 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver import ActionChains
 import time
 import random
+import pandas
+from pytube import YouTube
 
-# ----- Environment Setup -----
+# ----- CLI Entrypoint -----
 def entrypoint():
     print("----- Welcome to the M2K YouTube Ad Scraper -----\n")
     print("This program is designed to scrape a fresh YouTube window for ads based on your defined search term.\n")
     user_term = input("To begin, please enter the search term you'd like to browse for ads:\n")
     download_target = input("Next, please specify a number of ads that you would like to scrape:\n")
-    driver = webdriver.Chrome()
-    action = ActionChains(driver)
-    get_youtube(driver)
-    search_and_click(driver, user_term)
-    downloaded_ads = 0
-    clicks = 1
-    while downloaded_ads < int(download_target):
-        result = check_for_ad(driver, clicks, action)
-        if result == True:
-            downloaded_ads += 1
+    driver = webdriver.Chrome() #start the web browser
+    action = ActionChains(driver) #start the action driver
+    get_youtube(driver) #get youtube
+    search_and_click(driver, user_term) #search based on selected input
+    try: #try to open the index csv for ads
+        pandas.read_csv("./youtube_scraper/downloaded_ads/index.csv") #open the index
+    except: #create the index
+        print("No ad index found, creating one instead!")
+    downloaded_ads = 0  #Ads downloaded counter
+    clicks = 1 #Videos clicked counter
+    while downloaded_ads < int(download_target): #Loop until downloaded ads counter matches target
+        result = check_for_ad(driver, clicks, action) #Check for ad on video
+        if result == True: #if ad found...
+            download_ad(driver, action) #download it
+            downloaded_ads += 1 #increase counters
             clicks += 1
-            if downloaded_ads == int(download_target):
+            if downloaded_ads == int(download_target): #don't click another ad if counter matches
                 pass
             else:
-                click_related_video(driver)
-        else:
-            clicks += 1
-            click_related_video(driver)
+                click_related_video(driver) #if more ads needed, look for more
+        else: #if no ad found
+            clicks += 1 #increase click counter
+            click_related_video(driver) #click the next video
     print("successfully found {} ads, exiting script.".format(download_target))
     exit()
 #TODO Add error handling and logging
 #TODO Add verification of user inputs
+#TODO Make filepaths universal
 
-# ----- Starts WebClient and Retreives Youtube -----
-def get_youtube(driver): 
+# ----- Retreives Youtube -----
+def get_youtube(driver):
     driver.get("https://youtube.com")
     print("Successfully loaded YouTube")
 #TODO add error handling and logging 
@@ -59,7 +67,8 @@ def search_and_click(driver, search_term):
     pass
 #TODO add error handling and logging
 
-def check_for_ad(driver, clicks, action):
+# ----- Checks Current Video for Pre-Roll Ad -----
+def check_for_ad(driver, clicks):
     try:
         WebDriverWait(driver, timeout=5).until(EC.presence_of_element_located((By.CLASS_NAME, "ytp-ad-player-overlay")))
     except:
@@ -67,18 +76,19 @@ def check_for_ad(driver, clicks, action):
         return False
     else:
         print("Ad found!")
-        download_ad(driver, action)
         print("Ad downloaded, moving to related video #{}".format(clicks))
         return True
 #TODO Clicked a channel, gotta fix that
-#TODO Add logic to download ad
+#   Happens, pretty rarely, unsure why, will probably need some sort of halt when that happens so I can investigate
+#   May have had something to do with the -1
 
+# ----- Download the Pre-roll Ad -----
 def download_ad(driver, action):
-    try:
+    try: #Look to see if it can find the ID without any extra steps
         raw_id = driver.find_element(By.CLASS_NAME, "ytp-sfn-cpn").text
         ad_id = raw_id.split(" / ")[0]
-    except:
-        video_player = driver.find_element(By.CLASS_NAME, "ad-created") #keep an eye on this, unsure if this shows every time
+    except: #If unable to locate, open "Stats for nerds" so that ad info exists on the page
+        video_player = driver.find_element(By.CLASS_NAME, "ad-created")
         action.context_click(video_player).perform()
         context_menu = driver.find_elements(By.CLASS_NAME, "ytp-menuitem-label")
         for menu_item in context_menu:
@@ -87,8 +97,16 @@ def download_ad(driver, action):
         time.sleep(2)
         raw_id = driver.find_element(By.CLASS_NAME, "ytp-sfn-cpn").text
         ad_id = raw_id.split(" / ")[0]
-    print(ad_id)
+    ad_url = "https://youtube.ca/watch?v={}".format(ad_id)
+    ad = YouTube(ad_url)
+    try:
+        ad.streams.get_highest_resolution().download(output_path="./youtube_scraper/downloaded_ads", filename=ad_id)
+        print("ad successfully downloaded!")
+    except:
+        print("an error occured downloading this ad, the ad URL was {}".format(ad_url))
+#TODO Allow users to specify a download path
 
+#----- Click Random Related Video from Sidebar -----
 def click_related_video(driver):
     related_vids = driver.find_elements(By.CSS_SELECTOR, "ytd-compact-video-renderer.ytd-watch-next-secondary-results-renderer")
     number_of_related = len(related_vids) - 1
@@ -98,3 +116,4 @@ def click_related_video(driver):
     print("Found {} related videos on page one, clicking on video titled {}".format(number_of_related, video_title))
     related_vids[random_vid].click()
     WebDriverWait(driver, 5).until(EC.title_contains(video_title)) #don't move on until next video page loaded
+#TODO error handling and logging

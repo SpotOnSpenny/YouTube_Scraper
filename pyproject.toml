@@ -20,7 +20,9 @@ classifiers = [
 ]
 dependencies = [
 #TODO Fill list with dependencies as build goes
-"selenium"
+"selenium",
+"pytube",
+"pandas"
 ]
 
 [project.scripts]
