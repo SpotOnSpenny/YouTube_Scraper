@@ -21,17 +21,19 @@ def entrypoint():
     get_youtube(driver) #get youtube
     search_and_click(driver, user_term) #search based on selected input
     try: #try to open the index csv for ads
-        pandas.read_csv("./youtube_scraper/downloaded_ads/index.csv") #open the index
-    except: #create the index
+        index = pandas.read_csv("./youtube_scraper/downloaded_ads/index.csv") #open the index
+    except: #create the index csv if one not found
         print("No ad index found, creating one instead!")
+        index = pandas.DataFrame(columns = ["Ad ID", "Clicks Deep", "Found on Video"])
     downloaded_ads = 0  #Ads downloaded counter
     clicks = 1 #Videos clicked counter
     while downloaded_ads < int(download_target): #Loop until downloaded ads counter matches target
-        result = check_for_ad(driver, clicks, action) #Check for ad on video
+        result = check_for_ad(driver, clicks) #Check for ad on video
         if result == True: #if ad found...
-            download_ad(driver, action) #download it
+            index = download_ad(driver, action, clicks, index) #download it, add to index df
             downloaded_ads += 1 #increase counters
             clicks += 1
+            print(index)
             if downloaded_ads == int(download_target): #don't click another ad if counter matches
                 pass
             else:
@@ -39,7 +41,8 @@ def entrypoint():
         else: #if no ad found
             clicks += 1 #increase click counter
             click_related_video(driver) #click the next video
-    print("successfully found {} ads, exiting script.".format(download_target))
+    index.to_csv(path_or_buf="./youtube_scraper/downloaded_ads/index.csv", index=False)
+    print("successfully found {} ads and added them to index csv, exiting script.".format(download_target))
     exit()
 #TODO Add error handling and logging
 #TODO Add verification of user inputs
@@ -83,7 +86,7 @@ def check_for_ad(driver, clicks):
 #   May have had something to do with the -1
 
 # ----- Download the Pre-roll Ad -----
-def download_ad(driver, action):
+def download_ad(driver, action, clicks, dataframe):
     try: #Look to see if it can find the ID without any extra steps
         raw_id = driver.find_element(By.CLASS_NAME, "ytp-sfn-cpn").text
         ad_id = raw_id.split(" / ")[0]
@@ -99,11 +102,21 @@ def download_ad(driver, action):
         ad_id = raw_id.split(" / ")[0]
     ad_url = "https://youtube.ca/watch?v={}".format(ad_id)
     ad = YouTube(ad_url)
+    ad_metadata = [{
+        "Ad ID": ad_id,
+        "Clicks Deep": clicks,
+        "Found on Video": driver.current_url
+    }]
+    ad_metadata = pandas.DataFrame(ad_metadata)
     try:
-        ad.streams.get_highest_resolution().download(output_path="./youtube_scraper/downloaded_ads", filename=ad_id)
+        ad.streams.get_highest_resolution().download(output_path="./youtube_scraper/downloaded_ads", filename="{}.mp4".format(ad_id))
         print("ad successfully downloaded!")
     except:
         print("an error occured downloading this ad, the ad URL was {}".format(ad_url))
+        pass
+    else:
+        index = pandas.concat([dataframe, ad_metadata], ignore_index = True)
+        return index
 #TODO Allow users to specify a download path
 
 #----- Click Random Related Video from Sidebar -----
@@ -114,6 +127,11 @@ def click_related_video(driver):
     video_title = related_vids[random_vid].find_element(By.ID, "video-title").text
     print("The Video title was '{}'".format(video_title))
     print("Found {} related videos on page one, clicking on video titled {}".format(number_of_related, video_title))
-    related_vids[random_vid].click()
+    try:
+        related_vids[random_vid].click()
+    except:
+        print("Could not click video at position {}, trying a different related video".format(random_vid))
+        click_related_video(driver)
     WebDriverWait(driver, 5).until(EC.title_contains(video_title)) #don't move on until next video page loaded
 #TODO error handling and logging
+#TODO sometimes unable to find related video, added recursion to skirt around this, but would like to fix eventually
