@@ -64,7 +64,8 @@ def search_and_click(driver, search_term):
     WebDriverWait(driver, timeout=5).until(EC.title_contains(search_term))
     search_results = driver.find_elements(By.TAG_NAME, "ytd-video-renderer")
     number_of_results = len(search_results)
-    random_vid = random.randint(0, number_of_results)
+    random_index_max = number_of_results - 1
+    random_vid = random.randint(0, random_index_max)
     print("Found {} videos on page one, clicking on video number {}".format(number_of_results, random_vid))
     search_results[random_vid].click()
     pass
@@ -122,8 +123,9 @@ def download_ad(driver, action, clicks, dataframe):
 #----- Click Random Related Video from Sidebar -----
 def click_related_video(driver):
     related_vids = driver.find_elements(By.CSS_SELECTOR, "ytd-compact-video-renderer.ytd-watch-next-secondary-results-renderer")
-    number_of_related = len(related_vids) - 1
-    random_vid = random.randint(0, number_of_related)
+    number_of_related = len(related_vids)
+    random_index_max = number_of_related - 1 #subtract 1 for 0 indexed list
+    random_vid = random.randint(0, random_index_max)
     video_title = related_vids[random_vid].find_element(By.ID, "video-title").text
     print("The Video title was '{}'".format(video_title))
     print("Found {} related videos on page one, clicking on video titled {}".format(number_of_related, video_title))
