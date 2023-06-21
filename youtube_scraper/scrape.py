@@ -44,9 +44,6 @@ def entrypoint():
     index.to_csv(path_or_buf="./youtube_scraper/downloaded_ads/index.csv", index=False)
     print("successfully found {} ads and added them to index csv, exiting script.".format(download_target))
     exit()
-#TODO Add error handling and logging
-#TODO Add verification of user inputs
-#TODO Make filepaths universal
 
 # ----- Retreives Youtube -----
 def get_youtube(driver):
@@ -69,7 +66,6 @@ def search_and_click(driver, search_term):
     print("Found {} videos on page one, clicking on video number {}".format(number_of_results, random_vid))
     search_results[random_vid].click()
     pass
-#TODO add error handling and logging
 
 # ----- Checks Current Video for Pre-Roll Ad -----
 def check_for_ad(driver, clicks):
@@ -82,9 +78,6 @@ def check_for_ad(driver, clicks):
         print("Ad found!")
         print("Ad downloaded, moving to related video #{}".format(clicks))
         return True
-#TODO Clicked a channel, gotta fix that
-#   Happens, pretty rarely, unsure why, will probably need some sort of halt when that happens so I can investigate
-#   May have had something to do with the -1
 
 # ----- Download the Pre-roll Ad -----
 def download_ad(driver, action, clicks, dataframe):
@@ -118,7 +111,6 @@ def download_ad(driver, action, clicks, dataframe):
     else:
         index = pandas.concat([dataframe, ad_metadata], ignore_index = True)
         return index
-#TODO Allow users to specify a download path
 
 #----- Click Random Related Video from Sidebar -----
 def click_related_video(driver):
@@ -135,5 +127,3 @@ def click_related_video(driver):
         print("Could not click video at position {}, trying a different related video".format(random_vid))
         click_related_video(driver)
     WebDriverWait(driver, 5).until(EC.title_contains(video_title)) #don't move on until next video page loaded
-#TODO error handling and logging
-#TODO sometimes unable to find related video, added recursion to skirt around this, but would like to fix eventually
