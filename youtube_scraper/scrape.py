@@ -29,7 +29,7 @@ def entrypoint():
     clicks = 1 #Videos clicked counter
     while downloaded_ads < int(download_target): #Loop until downloaded ads counter matches target
         result = check_for_ad(driver, clicks) #Check for ad on video
-        if result == True: #if ad found...
+        if result == 1: #if ad found...
             index = download_ad(driver, action, clicks, index) #download it, add to index df
             downloaded_ads += 1 #increase counters
             clicks += 1
@@ -38,6 +38,9 @@ def entrypoint():
                 pass
             else:
                 click_related_video(driver) #if more ads needed, look for more
+        elif result > 1:
+            index = multi_ad(driver, action, clicks, index, result, downloaded_ads, download_target)
+            clicks += 1
         else: #if no ad found
             clicks += 1 #increase click counter
             click_related_video(driver) #click the next video
@@ -49,8 +52,6 @@ def entrypoint():
 def get_youtube(driver):
     driver.get("https://youtube.com")
     print("Successfully loaded YouTube")
-#TODO add error handling and logging 
-
 
 # ----- Searches for Term and Selects Random Video -----
 def search_and_click(driver, search_term):
@@ -69,17 +70,23 @@ def search_and_click(driver, search_term):
 
 # ----- Checks Current Video for Pre-Roll Ad -----
 def check_for_ad(driver, clicks):
-    try:
+    try: #Try to find an ad
         WebDriverWait(driver, timeout=5).until(EC.presence_of_element_located((By.CLASS_NAME, "ytp-ad-player-overlay")))
     except:
         print("No ad found, moving to related video #{}".format(clicks))
-        return False
+        return 0
+    try: #Try to find multiple ads
+        number_of_ads = driver.find_element(By.CLASS_NAME, "ytp-ad-simple-ad-badge").text.split()
+    except: #Except may not be needed, need to see what 1 ad looks like
+        print("One ad found!")
+        number_of_ads = 1
+    ads_served = int(number_of_ads[3])
+    if ads_served > 1: 
+        return ads_served
     else:
-        print("Ad found!")
-        print("Ad downloaded, moving to related video #{}".format(clicks))
-        return True
+        return 1
 
-# ----- Download the Pre-roll Ad -----
+# ----- Download a Pre-roll Ad -----
 def download_ad(driver, action, clicks, dataframe):
     try: #Look to see if it can find the ID without any extra steps
         raw_id = driver.find_element(By.CLASS_NAME, "ytp-sfn-cpn").text
@@ -107,10 +114,22 @@ def download_ad(driver, action, clicks, dataframe):
         print("ad successfully downloaded!")
     except:
         print("an error occured downloading this ad, the ad URL was {}".format(ad_url))
-        pass
+        return index
     else:
         index = pandas.concat([dataframe, ad_metadata], ignore_index = True)
         return index
+
+# ----- Check Ad Length -----
+def check_length(driver):
+    ad_length = int(driver.find_element(By.CLASS_NAME, "ytp-ad-duration-remaining").text.split(":")[0])
+    if ad_length > 0:
+        return "No Wait"
+    else:
+        return "Wait"
+
+# ------ Download Multiple Ads -----
+def multi_ad(driver, action, clicks, dataframe, ads_served, downloaded, target):
+    pass
 
 #----- Click Random Related Video from Sidebar -----
 def click_related_video(driver):
