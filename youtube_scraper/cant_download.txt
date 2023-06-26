@@ -1,0 +1,6 @@
+This doccument is to track ads which encounter errors while downloading
+
+The errors are likely a result of PyTube, and collecting them here will allow us to test later on and add catches
+to the code which will allow us to download all the ads we encounter.
+
+https://youtube.ca/watch?v=trhrBTl1noM
