@@ -49,8 +49,6 @@ def entrypoint():
 def get_youtube(driver):
     driver.get("https://youtube.com")
     print("Successfully loaded YouTube")
-#TODO add error handling and logging 
-
 
 # ----- Searches for Term and Selects Random Video -----
 def search_and_click(driver, search_term):
