@@ -62,4 +62,9 @@ We're currently working on setting up issue templates for these fields! Check ba
 
 ### Current Versions New Features
 
-This is the first version of the script! Please check back here for new additions in the future!
+#### V 0.0.2:
+
+The newest version of the script introduced the following feature:
+
+**Multi-Ad Scraping!**
+Previously, the script would only download a single ad and then move onto the next video, despite YouTube providing 2-3 on a single video. The script will now check to see if there is more than one ad on a video, and wait for the next ad to play before downloading it as well. However, if the current ad is longer than 1 minute in length, then the script will not wait and instead will move on, as that time is likely better spent clicking through related videos to find new ad sets instead.
