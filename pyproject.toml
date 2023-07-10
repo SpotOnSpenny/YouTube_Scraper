@@ -22,8 +22,10 @@ dependencies = [
 #TODO Fill list with dependencies as build goes
 "selenium",
 "pytube",
-"pandas"
+"pandas",
+"termcolor",
+"InquirerPy"
 ]
 
 [project.scripts]
-scrape = "youtube_scraper.scrape:entrypoint"
+scrape = "youtube_scraper.entrypoint.scrape_ads:entrypoint"
