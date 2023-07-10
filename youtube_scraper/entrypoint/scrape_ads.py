@@ -6,6 +6,7 @@ from InquirerPy import inquirer, get_style
 
 # ----- Internal Dependencies -----
 from youtube_scraper.core.ad_processing import find_index
+from youtube_scraper.core.selenium_utils import start_webdriver
 
 # ----- YouTube Scraper Entrypoint -----
 def entrypoint():   
@@ -39,3 +40,4 @@ def entrypoint():
         choices = ["4 YO Female", "4 YO Male - Unavailable", "6 YO Male - Unavailable", "7 YO Female - Unavailable", "9 YO Female - Unavailable", "10 YO Male - Unavailable", "No profile"]
     ).execute()
     dataframe = find_index() #find or create index for ads
+    start_webdriver(profile)
