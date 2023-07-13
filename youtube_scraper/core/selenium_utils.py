@@ -6,6 +6,7 @@ import time
 from selenium import webdriver
 from termcolor import colored
 from selenium.webdriver.chrome.options import Options
+import gdown
 
 # ----- Internal Dependencies -----
 
@@ -18,6 +19,7 @@ def start_webdriver(profile):
     # ----- Script -----
     options = Options() #instantiate options
     dir_name = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) #path to youtube_scraper folder on current machine
+    download_profiles(dir_name)
     accounts_dir = os.path.join(dir_name, "YouTube_Accounts") #path to YouTube account folder
     print(accounts_dir)
     options.add_argument("--user-data-dir={}".format(accounts_dir))
@@ -43,3 +45,9 @@ def start_webdriver(profile):
     print(options)
     driver = webdriver.Chrome(options=options)
     time.sleep(3000)
+
+def download_profiles(install_dir):
+    windows_profiles = "1hECBIdJ2eligvf--g86HfnMpWak8vSqJ"
+    output = "{}/temp.zip".format(install_dir)
+    gdown.download(id=windows_profiles, output=output)
+    print("downloaded successfully")

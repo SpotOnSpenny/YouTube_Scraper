@@ -6,7 +6,7 @@ from InquirerPy import inquirer, get_style
 
 # ----- Internal Dependencies -----
 from youtube_scraper.core.ad_processing import find_index
-from youtube_scraper.core.selenium_utils import start_webdriver
+from youtube_scraper.core.selenium_utils import start_webdriver, download_profiles
 
 # ----- YouTube Scraper Entrypoint -----
 def entrypoint():   
