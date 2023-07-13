@@ -24,7 +24,8 @@ dependencies = [
 "pytube",
 "pandas",
 "termcolor",
-"InquirerPy"
+"InquirerPy",
+"gdown"
 ]
 
 [project.scripts]
