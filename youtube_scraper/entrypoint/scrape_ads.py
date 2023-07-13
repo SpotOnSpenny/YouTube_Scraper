@@ -39,5 +39,5 @@ def entrypoint():
         message = "Please select which demographic you'd like to check for ads with:",
         choices = ["4 YO Female", "4 YO Male - Unavailable", "6 YO Male - Unavailable", "7 YO Female - Unavailable", "9 YO Female - Unavailable", "10 YO Male - Unavailable", "No profile"]
     ).execute()
-    dataframe = find_index() #find or create index for ads
+    dataframe = find_index() #find index or create new dataframe for ads
     start_webdriver(profile)
