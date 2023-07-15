@@ -23,3 +23,14 @@ def find_index():
         print(no_index)
         dataframe = pandas.DataFrame(columns = ["Ad ID", "Clicks Deep", "Found on Video"])
     return dataframe
+
+def parse_json_for_ads(json_data):
+    ad_items = json_data.get("adPlacements").get("renderer").get("linearAdSequenceRenderer", "No Ad on Video").get("linearAds")
+    if ad_items == "No Ad on Video":
+        return ad_items
+    else:
+        ads = []
+        for dictionary in ad_items:
+            if "instreamVideoAdRenderer" in dictionary:
+                ads.append(dictionary.get("instreamVideoAdRenderer").get("externalVideoID", "Error getting ID"))
+    return ads
