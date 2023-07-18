@@ -52,7 +52,6 @@ def entrypoint():
     dataframe = find_index() #find index or create new dataframe for ads
     driver = start_webdriver(profile)
     find_and_process(driver, dataframe, search_term, download_target)
-    
 
 def find_and_process(driver, index, search_term, download_target):
     #----- Colored Messages -----
@@ -83,12 +82,13 @@ def find_and_process(driver, index, search_term, download_target):
 
 def processing_thread():
     global downloaded_ads
+    global dataframe
 
     while True:
         task = process_queue.get() #get process from queue
         if task is None: # break if the task is none, set when target hit
             break
         video_obj, index, clicks = task
-        process_data(video_obj, index, clicks)
+        processed, dataframe = process_data(video_obj, index, clicks)
         #insert download function here
-        downloaded_ads += 1
+        downloaded_ads += processed

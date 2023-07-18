@@ -39,12 +39,14 @@ def find_values(obj, *keys):
 def process_data(response, index, clicks):
     #----- Colored Messages -----
     no_ads = colored("No ads found on video, processing next video", "magenta")
+    ad_added = colored("An Ad has been found and added to the index!", "magenta")
 
     #----- Script -----
     ads = list(find_values(response, "instreamVideoAdRenderer")) #determine if an ad exists on the video
+    processed = 0
     if ads == []: #when there are no ads, move on
         print(no_ads)
-        pass
+        return processed
     else: #when there are ads, find data about the video they're on
         vid_data = find_values(response, "videoDetails", "isFamilySafe")
         video_specifics, family_safe = vid_data
@@ -57,5 +59,8 @@ def process_data(response, index, clicks):
                 "Posting Channel": video_specifics["author"],
                 "Family Safe": family_safe
             }]
-            #add to dataframe
-            print(ad_metadata)
+            ad_metadata = pandas.DataFrame(ad_metadata)
+            index = pandas.concat([index, ad_metadata], ignore_index = True)
+            processed += 1
+        index.to_csv(path_or_buf="./youtube_scraper/downloaded_ads/index.csv", index=False) #save CSV incase of error
+        return processed, index

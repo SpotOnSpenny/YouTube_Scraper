@@ -27,21 +27,31 @@ def search_for_term(driver, search_term):
     pass
 
 def click_related_video(driver):
-    related_vids = driver.find_elements(By.CSS_SELECTOR, ".ytd-watch-next-secondary-results-renderer")
+    try: #try to find video title, won't appear on channels or reels
+        WebDriverWait(driver, timeout=10).until(EC.visibility_of_element_located((By.CSS_SELECTOR, "yt-formatted-string.ytd-watch-metadata")))
+    except: #check to see if we're on a video, if not go back and wait for page to load before clicking a related video
+        back_when_not_video(driver)
+        WebDriverWait(driver, timeout=10).until(EC.visibility_of_element_located((By.CSS_SELECTOR, "yt-formatted-string.ytd-watch-metadata")))
+    print("page loaded, checking related vids")
+    related_vids = driver.find_elements(By.CSS_SELECTOR, "ytd-compact-video-renderer.ytd-watch-next-secondary-results-renderer")
     number_of_related = len(related_vids)
-    print(number_of_related)
     random_index_max = number_of_related - 1 #subtract 1 for 0 indexed list
     random_vid = random.randint(0, random_index_max)
-    video_title = related_vids[random_vid].find_element(By.ID, "video-title").text
-    print(video_title, )
-    try:
-        WebDriverWait(driver, timeout=5).until(EC.element_to_be_clickable(related_vids[random_vid]))
-        related_vids[random_vid].click()
-    except:
-        print("Could not click video at position {}, trying a different related video".format(random_vid))
+    random_vid = related_vids[random_vid]
+    video_title = random_vid.find_element(By.ID, "video-title").text
+    try: #try to click on the thumbnail
+        thumbnail = random_vid.find_element(By.CSS_SELECTOR, "a.yt-simple-endpoint")
+        WebDriverWait(driver, timeout=5).until(EC.element_to_be_clickable(thumbnail))
+        thumbnail.click()
+    except: #retry if unable to 
+        print("Could not click video at position")
         click_related_video(driver)
-    WebDriverWait(driver, 5).until(EC.title_contains(video_title)) #don't move on until next video page loaded
-    back_when_not_video(driver)
+    try: #try to wait for clicked video to load
+        WebDriverWait(driver, 5).until(EC.title_contains(video_title)) #don't move on until next video page loaded
+    except: #retry if unable to
+        print("new video did not load, trying a different one")
+        click_related_video(driver)
+    pass
 
 def get_video_object(driver):
     try:
@@ -49,8 +59,6 @@ def get_video_object(driver):
         response = driver.execute_script('return document.getElementById("movie_player")?.getPlayerResponse()')
     except:
         get_video_object(driver)
-    with open("sample_object.json", "w") as outfile:
-        json.dump(response, outfile)
     return response
 
 def back_when_not_video(driver):
