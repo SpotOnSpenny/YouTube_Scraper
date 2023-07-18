@@ -7,6 +7,7 @@ from termcolor import colored
 
 # ----- Internal Dependencies -----
 
+
 # ----- Look for Index -----
 def find_index():
     # ----- Colored Messages -----
@@ -21,16 +22,40 @@ def find_index():
         print(index_found) 
     except: #create the index csv if one not found
         print(no_index)
-        dataframe = pandas.DataFrame(columns = ["Ad ID", "Clicks Deep", "Found on Video"])
+        dataframe = pandas.DataFrame(columns = ["Ad ID", "Clicks Deep", "Ad_Endpoint", "Found on Video", "Posting Channel", "Video Tags", "Family Safe"])
     return dataframe
 
-def parse_json_for_ads(json_data):
-    ad_items = json_data.get("adPlacements").get("renderer").get("linearAdSequenceRenderer", "No Ad on Video").get("linearAds")
-    if ad_items == "No Ad on Video":
-        return ad_items
-    else:
-        ads = []
-        for dictionary in ad_items:
-            if "instreamVideoAdRenderer" in dictionary:
-                ads.append(dictionary.get("instreamVideoAdRenderer").get("externalVideoID", "Error getting ID"))
-    return ads
+def find_values(obj, *keys):
+    if isinstance(obj, dict):
+        for key in keys:
+            if key in obj:
+                yield obj[key]
+        obj = obj.values()
+    elif not isinstance(obj, list):
+        return
+    for child in obj:
+        yield from find_values(child, *keys)
+
+def process_data(response, index, clicks):
+    #----- Colored Messages -----
+    no_ads = colored("No ads found on video, processing next video", "magenta")
+
+    #----- Script -----
+    ads = list(find_values(response, "instreamVideoAdRenderer")) #determine if an ad exists on the video
+    if ads == []: #when there are no ads, move on
+        print(no_ads)
+        pass
+    else: #when there are ads, find data about the video they're on
+        vid_data = find_values(response, "videoDetails", "isFamilySafe")
+        video_specifics, family_safe = vid_data
+        for ad in ads:
+            ad_metadata = [{
+                "Ad ID": ad["externalVideoId"],
+                "Clicks Deep": clicks,
+                "Ad Endpoint": ad["clickthroughEndpoint"]["urlEndpoint"]["url"],
+                "Found on Video": video_specifics["title"],
+                "Posting Channel": video_specifics["author"],
+                "Family Safe": family_safe
+            }]
+            #add to dataframe
+            print(ad_metadata)

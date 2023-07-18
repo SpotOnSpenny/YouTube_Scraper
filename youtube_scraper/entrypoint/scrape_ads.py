@@ -1,14 +1,20 @@
 # ----- Python Standard Library -----
 import time
+import threading
+import queue
 
 # ----- External Dependencies -----
 from termcolor import colored
 from InquirerPy import inquirer, get_style
 
 # ----- Internal Dependencies -----
-from youtube_scraper.core.ad_processing import find_index, parse_json_for_ads
+from youtube_scraper.core.ad_processing import find_index, process_data
 from youtube_scraper.core.selenium_utils import start_webdriver
-from youtube_scraper.core.youtube_utils import search_for_term, get_video_object
+from youtube_scraper.core.youtube_utils import search_for_term, get_video_object, click_related_video
+
+# ----- Environment Setup -----
+process_queue = queue.Queue() #instantiate queue for processing with threads
+downloaded_ads = 0
 
 # ----- YouTube Scraper Entrypoint -----
 def entrypoint():   
@@ -37,7 +43,7 @@ def entrypoint():
                 print(invalid_error, invalid_digit) #print error when conditions not met
         else:
             print(invalid_error, non_digit) #print error when conditions not met
-    print()
+    print(profiles_notice)
     profile = inquirer.select(
         style = style,
         message = "Please select which demographic you'd like to check for ads with:",
@@ -45,8 +51,44 @@ def entrypoint():
     ).execute()
     dataframe = find_index() #find index or create new dataframe for ads
     driver = start_webdriver(profile)
-    search_for_term(driver, search_term)
+    find_and_process(driver, dataframe, search_term, download_target)
+    
+
+def find_and_process(driver, index, search_term, download_target):
+    #----- Colored Messages -----
+    target_reached = colored("Download target reached! Finishing up processing of remaining queue...", "magenta")
+    all_done = colored("Finished! Exiting program now.", "magenta")
+
+    #----- Script -----
+    thread = threading.Thread(target=processing_thread)
+    clicks = 1
+    try:
+        search_for_term(driver, search_term)
+    except:
+        print("An unexpected error occured, restarting")
+        find_and_process(driver, index, search_term, download_target)
     video_obj = get_video_object(driver)
-    print(video_obj)
-    ads_on_video = parse_json_for_ads(video_obj)
-    print(ads_on_video)
+    thread.start()
+    process_queue.put((video_obj, index, clicks))
+    while downloaded_ads < download_target:
+        clicks += 1
+        click_related_video(driver)
+        video_obj = get_video_object(driver)
+        process_queue.put((video_obj, index, clicks))
+    print(target_reached)
+    process_queue.put(None)
+    thread.join()
+    print(all_done)
+    exit
+
+def processing_thread():
+    global downloaded_ads
+
+    while True:
+        task = process_queue.get() #get process from queue
+        if task is None: # break if the task is none, set when target hit
+            break
+        video_obj, index, clicks = task
+        process_data(video_obj, index, clicks)
+        #insert download function here
+        downloaded_ads += 1
