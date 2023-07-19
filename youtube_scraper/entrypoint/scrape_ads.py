@@ -10,7 +10,7 @@ from InquirerPy import inquirer, get_style
 # ----- Internal Dependencies -----
 from youtube_scraper.core.ad_processing import find_index, process_data
 from youtube_scraper.core.selenium_utils import start_webdriver
-from youtube_scraper.core.youtube_utils import search_for_term, get_video_object, click_related_video
+from youtube_scraper.core.youtube_utils import search_for_term, get_video_object, click_related_video, back_when_not_video
 
 # ----- Environment Setup -----
 process_queue = queue.Queue() #instantiate queue for processing with threads
@@ -74,7 +74,6 @@ def find_and_process(driver, search_term, download_target):
         clicks += 1
         click_related_video(driver)
         video_obj = get_video_object(driver)
-        print(video_obj)
         process_queue.put((video_obj, clicks))
     print(target_reached)
     process_queue.put(None)
@@ -92,5 +91,4 @@ def processing_thread():
             break
         video_obj, clicks = task
         processed, dataframe = process_data(video_obj, dataframe, clicks)
-        #insert download function here
         downloaded_ads += processed

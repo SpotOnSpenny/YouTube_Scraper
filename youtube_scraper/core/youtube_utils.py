@@ -32,7 +32,6 @@ def click_related_video(driver):
     except: #check to see if we're on a video, if not go back and wait for page to load before clicking a related video
         back_when_not_video(driver)
         WebDriverWait(driver, timeout=10).until(EC.visibility_of_element_located((By.CSS_SELECTOR, "yt-formatted-string.ytd-watch-metadata")))
-    print("page loaded, checking related vids")
     related_vids = driver.find_elements(By.CSS_SELECTOR, "ytd-compact-video-renderer.ytd-watch-next-secondary-results-renderer")
     number_of_related = len(related_vids)
     random_index_max = number_of_related - 1 #subtract 1 for 0 indexed list
@@ -44,12 +43,10 @@ def click_related_video(driver):
         WebDriverWait(driver, timeout=5).until(EC.element_to_be_clickable(thumbnail))
         thumbnail.click()
     except: #retry if unable to 
-        print("Could not click video at position")
         click_related_video(driver)
     try: #try to wait for clicked video to load
         WebDriverWait(driver, 5).until(EC.title_contains(video_title)) #don't move on until next video page loaded
     except: #retry if unable to
-        print("new video did not load, trying a different one")
         click_related_video(driver)
     pass
 
