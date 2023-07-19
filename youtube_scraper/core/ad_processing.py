@@ -46,7 +46,7 @@ def process_data(response, index, clicks):
     processed = 0
     if ads == []: #when there are no ads, move on
         print(no_ads)
-        return processed
+        return processed, index
     else: #when there are ads, find data about the video they're on
         vid_data = find_values(response, "videoDetails", "isFamilySafe")
         video_specifics, family_safe = vid_data
@@ -63,4 +63,5 @@ def process_data(response, index, clicks):
             index = pandas.concat([index, ad_metadata], ignore_index = True)
             processed += 1
         index.to_csv(path_or_buf="./youtube_scraper/downloaded_ads/index.csv", index=False) #save CSV incase of error
+        print(ad_added)
         return processed, index

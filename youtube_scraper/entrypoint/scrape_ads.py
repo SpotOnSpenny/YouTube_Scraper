@@ -49,11 +49,12 @@ def entrypoint():
         message = "Please select which demographic you'd like to check for ads with:",
         choices = ["4 YO Female", "4 YO Male", "6 YO Male", "7 YO Female", "9 YO Female", "10 YO Male", "No profile"]
     ).execute()
+    global dataframe
     dataframe = find_index() #find index or create new dataframe for ads
     driver = start_webdriver(profile)
-    find_and_process(driver, dataframe, search_term, download_target)
+    find_and_process(driver, search_term, download_target)
 
-def find_and_process(driver, index, search_term, download_target):
+def find_and_process(driver, search_term, download_target):
     #----- Colored Messages -----
     target_reached = colored("Download target reached! Finishing up processing of remaining queue...", "magenta")
     all_done = colored("Finished! Exiting program now.", "magenta")
@@ -65,15 +66,16 @@ def find_and_process(driver, index, search_term, download_target):
         search_for_term(driver, search_term)
     except:
         print("An unexpected error occured, restarting")
-        find_and_process(driver, index, search_term, download_target)
+        find_and_process(driver, search_term, download_target)
     video_obj = get_video_object(driver)
     thread.start()
-    process_queue.put((video_obj, index, clicks))
+    process_queue.put((video_obj, clicks))
     while downloaded_ads < download_target:
         clicks += 1
         click_related_video(driver)
         video_obj = get_video_object(driver)
-        process_queue.put((video_obj, index, clicks))
+        print(video_obj)
+        process_queue.put((video_obj, clicks))
     print(target_reached)
     process_queue.put(None)
     thread.join()
@@ -88,7 +90,7 @@ def processing_thread():
         task = process_queue.get() #get process from queue
         if task is None: # break if the task is none, set when target hit
             break
-        video_obj, index, clicks = task
-        processed, dataframe = process_data(video_obj, index, clicks)
+        video_obj, clicks = task
+        processed, dataframe = process_data(video_obj, dataframe, clicks)
         #insert download function here
         downloaded_ads += processed
