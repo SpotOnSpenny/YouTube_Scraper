@@ -41,6 +41,7 @@ def process_data(response, index, clicks):
     #----- Colored Messages -----
     no_ads = colored("No ads found on video #{}, processing next video".format(clicks), "magenta")
     ad_added = colored("An Ad has been found and added to the index!", "green")
+    already_downloaded = colored("A duplicate ad was found, no need to download!", 'magenta')
 
     #----- Script -----
     ads = list(find_values(response, "instreamVideoAdRenderer")) #determine if an ad exists on the video
@@ -54,9 +55,10 @@ def process_data(response, index, clicks):
         for ad in ads:
             ad_id = ad["externalVideoId"]
             if check_for_duplicate(ad_id) == False: #if ad hasn't been downloaded yet, download it
-                download_stauts = download_ad(ad_id)
+                download_status = download_ad(ad_id)
             else:
                 download_status = True
+                print(already_downloaded)
             ad_metadata = [{
                 "Ad ID": ad_id,
                 "Clicks Deep": clicks,
@@ -64,7 +66,7 @@ def process_data(response, index, clicks):
                 "Found on Video": video_specifics["title"],
                 "Posting Channel": video_specifics["author"],
                 "Family Safe": str(family_safe),
-                "Downloaded": str(download_stauts)
+                "Downloaded": str(download_status)
             }]
             ad_metadata = pandas.DataFrame(ad_metadata)
             index = pandas.concat([index, ad_metadata], ignore_index = True)

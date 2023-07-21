@@ -1,5 +1,5 @@
 # ----- Python Standard Library -----
-import time
+from timeit import default_timer as timer
 import threading
 import queue
 
@@ -27,6 +27,7 @@ def entrypoint():
     invalid_digit = colored("The input you entered was invalid! Please ensure your input is greater than 0.\n", "red")
     style = get_style({"question": "#ff75b5", "questionmark": "#ff75b5", "answered_question": "#ff75b5", "answermark": "#ff75b5"})
     profiles_notice = colored("***PLEASE NOTE:*** \n due to the way that profile data works, profiles will only work on Spencer's computer \n If not on Spencer's home desktop, please select 'no profile' from the options below to run the script", "red")
+    all_done = colored("Finished! Exiting program now.", "magenta")
 
     # ----- Script -----
     print(entry_message)
@@ -49,15 +50,20 @@ def entrypoint():
         message = "Please select which demographic you'd like to check for ads with:",
         choices = ["4 YO Female", "4 YO Male", "6 YO Male", "7 YO Female", "9 YO Female", "10 YO Male", "No profile"]
     ).execute()
+    start_time = timer()
     global dataframe
     dataframe = find_index() #find index or create new dataframe for ads
     driver = start_webdriver(profile)
     find_and_process(driver, search_term, download_target)
+    end_time = timer()
+    time_in_mins = int(end_time - start_time)/60
+    execution_time = colored("Found {} ads in {} mins.".format(downloaded_ads, time_in_mins), "magenta")
+    print(execution_time)
+    exit
 
 def find_and_process(driver, search_term, download_target):
     #----- Colored Messages -----
     target_reached = colored("Download target reached! Finishing up processing of remaining queue...", "magenta")
-    all_done = colored("Finished! Exiting program now.", "magenta")
 
     #----- Script -----
     thread = threading.Thread(target=processing_thread)
@@ -78,8 +84,6 @@ def find_and_process(driver, search_term, download_target):
     print(target_reached)
     process_queue.put(None)
     thread.join()
-    print(all_done)
-    exit
 
 def processing_thread():
     global downloaded_ads

@@ -37,8 +37,8 @@ def click_related_video(driver):
     random_index_max = number_of_related - 1 #subtract 1 for 0 indexed list
     random_vid = random.randint(0, random_index_max)
     random_vid = related_vids[random_vid]
-    video_title = random_vid.find_element(By.ID, "video-title").text
     try: #try to click on the thumbnail
+        video_title = random_vid.find_element(By.ID, "video-title").text
         thumbnail = random_vid.find_element(By.CSS_SELECTOR, "a.yt-simple-endpoint")
         WebDriverWait(driver, timeout=5).until(EC.element_to_be_clickable(thumbnail))
         thumbnail.click()
