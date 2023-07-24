@@ -29,7 +29,6 @@ def entrypoint():
     invalid_digit = colored("The input you entered was invalid! Please ensure your input is greater than 0.\n", "red")
     style = get_style({"question": "#ff75b5", "questionmark": "#ff75b5", "answered_question": "#ff75b5", "answermark": "#ff75b5"})
     profiles_notice = colored("***PLEASE NOTE:*** \n due to the way that profile data works, profiles will only work on Spencer's computer \n If not on Spencer's home desktop, please select 'no profile' from the options below to run the script", "red")
-    target_reached = colored("Download target reached! Finishing up processing of remaining queue...", "magenta")
 
     # ----- Script -----
     print(entry_message)
@@ -72,12 +71,14 @@ def find_and_process(search_term, download_target, profile):
     clicks = 1
     try:
         search_for_term(driver, search_term)
-    except:
+    except Exception as error:
         print("An unexpected error occured, restarting")
-        find_and_process(driver, search_term, download_target)
+        print(error)
+        driver.close()
+        find_and_process(search_term, download_target, profile)
     video_obj = get_video_object(driver)
     thread.start()
-    process_queue.put((video_obj, clicks))
+    process_queue.put((video_obj, clicks, search_term))
     while downloaded_ads < download_target:
         clicks += 1
         if clicks_without_ad > 50:
@@ -85,7 +86,7 @@ def find_and_process(search_term, download_target, profile):
             break
         click_related_video(driver)
         video_obj = get_video_object(driver)
-        process_queue.put((video_obj, clicks))
+        process_queue.put((video_obj, clicks, search_term))
     process_queue.put(None)
     thread.join()
 
@@ -98,8 +99,8 @@ def processing_thread():
         task = process_queue.get() #get process from queue
         if task is None: # break if the task is none, set when target hit
             break
-        video_obj, clicks = task
-        processed, dataframe, ad_present = process_data(video_obj, dataframe, clicks)
+        video_obj, clicks, search_term = task
+        processed, dataframe, ad_present = process_data(video_obj, dataframe, clicks, search_term)
         if ad_present == True:
             clicks_without_ad = 0
         else:

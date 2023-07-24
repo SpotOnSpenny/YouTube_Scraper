@@ -49,8 +49,9 @@ def start_webdriver(profile):
             options.add_argument(r"--profile-directory=10YOM")
             print(profile_statement)
         case _:
-            options = None
+            options.arguments[:] = []
             print(no_profile)
+    options.add_argument("--mute-audio")
     driver = webdriver.Chrome(options=options)
     driver.get("https://youtube.com")
     return driver

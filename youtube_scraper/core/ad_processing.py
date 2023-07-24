@@ -23,7 +23,7 @@ def find_index():
         print(index_found) 
     except: #create the index csv if one not found
         print(no_index)
-        dataframe = pandas.DataFrame(columns = ["Ad ID", "Clicks Deep", "Ad Endpoint", "Found on Video", "Posting Channel", "Family Safe", "Downloaded"])
+        dataframe = pandas.DataFrame(columns = ["Ad ID", "Found on Search", "Clicks Deep", "Ad Endpoint", "Found on Video", "Posting Channel", "Family Safe", "Downloaded"])
     return dataframe
 
 def find_values(obj, *keys):
@@ -37,7 +37,7 @@ def find_values(obj, *keys):
     for child in obj:
         yield from find_values(child, *keys)
 
-def process_data(response, index, clicks):
+def process_data(response, index, clicks, search_term):
     #----- Colored Messages -----
     no_ads = colored("No ads found on video #{}, processing next video".format(clicks), "magenta")
     ad_added = colored("An Ad has been found and added to the index!", "green")
@@ -64,6 +64,7 @@ def process_data(response, index, clicks):
             ad_metadata = [{
                 "Ad ID": ad_id,
                 "Clicks Deep": clicks,
+                "Found on Search": search_term,
                 "Ad Endpoint": ad["clickthroughEndpoint"]["urlEndpoint"]["url"],
                 "Found on Video": video_specifics["title"],
                 "Posting Channel": video_specifics["author"],

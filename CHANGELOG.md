@@ -24,3 +24,19 @@
 - Added function to scrape multiple ads on a single video
   - When youtube shows an ad, it typically does so in groups of 2-3
   - As of 0.0.2 the script now checks to see how many ads are served, and will wait for the next ad to display if the current ad is under a minute long
+
+# 0.0.4 (2023-07-24)
+
+## About this Version
+
+- Added the ability to scrape data using existing profile data
+- Search will now restart if 50 videos are processed without any ads being displayed, this drops processing time down to ~10 ads per minute
+  - This is a HUGE increase in processing time (14x to be exact!)
+- Refactored codebase so that it's easier to develop on top of in the future to add extra features
+- Added colored print statements to make it easier to see when an add is found/added
+- Scrape is now timed to give a better idea on how fast you are able to find the ads
+  - This feature will be used in the future to further optimize the script
+- Instead of using the DOM to find info about the ad, a script is now run which returns the video player object which contains information about all ads served
+  - Removes the logic required previously to wait for a second ad as now all ads on the video can be found in one go
+  - Also no need to right click the video in order to find tha ad ID, overall much cleaner
+  - Thanks, Matt!
