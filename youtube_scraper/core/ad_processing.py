@@ -48,9 +48,11 @@ def process_data(response, index, clicks):
     processed = 0
     if ads == []: #when there are no ads, move on
         print(no_ads)
-        return processed, index
+        ad_present = False
+        return processed, index, ad_present
     else: #when there are ads, find data about the video they're on
         vid_data = find_values(response, "videoDetails", "isFamilySafe")
+        ad_present = True
         video_specifics, family_safe = vid_data
         for ad in ads:
             ad_id = ad["externalVideoId"]
@@ -73,7 +75,7 @@ def process_data(response, index, clicks):
             processed += 1
             print(ad_added)
         index.to_csv(path_or_buf="./youtube_scraper/downloaded_ads/ad_index.csv", index=False) #save CSV incase of error
-        return processed, index
+        return processed, index, ad_present
     
 def check_for_duplicate(ad_id):
     working_directory = os.getcwd() #get current directory

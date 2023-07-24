@@ -2,6 +2,7 @@
 from timeit import default_timer as timer
 import threading
 import queue
+import time
 
 # ----- External Dependencies -----
 from termcolor import colored
@@ -15,6 +16,7 @@ from youtube_scraper.core.youtube_utils import search_for_term, get_video_object
 # ----- Environment Setup -----
 process_queue = queue.Queue() #instantiate queue for processing with threads
 downloaded_ads = 0
+clicks_without_ad = 0
 
 # ----- YouTube Scraper Entrypoint -----
 def entrypoint():   
@@ -78,6 +80,8 @@ def find_and_process(driver, search_term, download_target):
     process_queue.put((video_obj, clicks))
     while downloaded_ads < download_target:
         clicks += 1
+        if clicks_without_ad > 50:
+            time.sleep(30)
         click_related_video(driver)
         video_obj = get_video_object(driver)
         process_queue.put((video_obj, clicks))
@@ -88,11 +92,16 @@ def find_and_process(driver, search_term, download_target):
 def processing_thread():
     global downloaded_ads
     global dataframe
+    global clicks_without_ad
 
     while True:
         task = process_queue.get() #get process from queue
         if task is None: # break if the task is none, set when target hit
             break
         video_obj, clicks = task
-        processed, dataframe = process_data(video_obj, dataframe, clicks)
+        processed, dataframe, ad_present = process_data(video_obj, dataframe, clicks)
+        if ad_present == True:
+            clicks_without_ad = 0
+        else:
+            clicks_without_ad += 1
         downloaded_ads += processed
