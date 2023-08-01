@@ -31,22 +31,22 @@ def start_webdriver(profile):
     options.add_argument("--user-data-dir={}".format(accounts_dir))
     match profile: #Add profile to options depending on profile selected
         case "4 YO Female":
-            options.add_argument(r"--profile-directory=4YOF")
+            options.add_argument(r"--profile-directory=Profile 5")
             print(profile_statement)
         case "4 YO Male":
-            options.add_argument(r"--profile-directory=4YOM")
+            options.add_argument(r"--profile-directory=Profile 4")
             print(profile_statement)
         case "6 YO Male":
-            options.add_argument(r"--profile-directory=6YOM")
+            options.add_argument(r"--profile-directory=Profile 3")
             print(profile_statement)
         case "7 YO Female":
-            options.add_argument(r"--profile-directory=7YOF")
+            options.add_argument(r"--profile-directory=Profile 2")
             print(profile_statement)
         case "9 YO Female":
-            options.add_argument(r"--profile-directory=9YOF")
+            options.add_argument(r"--profile-directory=Profile 1")
             print(profile_statement)
         case "10 YO Male":
-            options.add_argument(r"--profile-directory=10YOM")
+            options.add_argument(r"--profile-directory=Default")
             print(profile_statement)
         case _:
             options.arguments[:] = []
