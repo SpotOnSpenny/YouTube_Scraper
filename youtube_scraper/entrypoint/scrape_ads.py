@@ -7,6 +7,8 @@ import time
 # ----- External Dependencies -----
 from termcolor import colored
 from InquirerPy import inquirer, get_style
+from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 # ----- Internal Dependencies -----
 from youtube_scraper.core.ad_processing import find_index, process_data
@@ -78,20 +80,21 @@ def find_and_process(search_term, download_target, profile):
         video_obj = get_video_object(driver)
         thread.start()
         process_queue.put((video_obj, clicks, search_term, profile))
-    except Exception as error:
+    except:
         driver.close()
         find_and_process(search_term, download_target, profile)
     while downloaded_ads < download_target:
         clicks += 1
         try: #if cannot find like related video, break and restart browser
-            click_related_video(driver, search_term)
-        except:
+            link = click_related_video(driver, search_term)
+            WebDriverWait(driver, timeout=5).until(EC.url_contains(link))
+        except Exception as e:
             clicks_without_ad = 1
             break
         video_obj = get_video_object(driver)
         process_queue.put((video_obj, clicks, search_term, profile))
         if clicks_without_ad > 9:
-            clicks_without_ad = 1
+            clicks_without_ad = 0
             break
     driver.close()
     process_queue.put(None)

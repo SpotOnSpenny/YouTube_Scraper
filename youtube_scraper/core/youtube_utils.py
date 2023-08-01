@@ -28,17 +28,16 @@ def search_for_term(driver, search_term):
 def click_related_video(driver, search_term):
     #get related videos
     try:
-        WebDriverWait(driver, timeout=10).until(EC.visibility_of_element_located((By.CSS_SELECTOR, "div#above-the-fold"))) #wait for vid to load
         related_videos = []
         while len(related_videos) < 10:#wait for all related video items to render
             related_videos = driver.find_elements(By.TAG_NAME, "ytd-compact-video-renderer") #find all related video elements now that they've rendered
     except:
         click_related_video(driver, search_term)
     try:
-        only_click_video(driver, related_videos, True, search_term)
+        link = only_click_video(driver, related_videos, True, search_term)
     except Exception as e:
         raise Exception(e)
-    pass
+    return link
 
 def get_video_object(driver):
     try:
@@ -75,6 +74,7 @@ def only_click_video(driver, videos, related_click, search_term=None):
         try: #try to click thumbnail if it is a video
             WebDriverWait(driver, timeout= 5).until(EC.element_to_be_clickable(video_thumbnail))
             video_thumbnail.click()
+            return link
         except: #retry if unable to click
             only_click_video(driver, videos, related_click, search_term)
     else: #restart if it's not a video  and click a different one
