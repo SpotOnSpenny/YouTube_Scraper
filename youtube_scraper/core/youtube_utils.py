@@ -1,5 +1,6 @@
 # ----- Python Standard Library -----
 import random
+import time
 
 # ----- External Dependencies -----
 from selenium import webdriver
@@ -34,16 +35,15 @@ def click_related_video(driver, search_term):
     except:
         click_related_video(driver, search_term)
     try:
-        link = only_click_video(driver, related_videos, True, search_term)
+        only_click_video(driver, related_videos, True, search_term)
     except Exception as e:
         raise Exception(e)
-    return link
 
 def get_video_object(driver):
     try:
         WebDriverWait(driver, timeout=5).until(EC.visibility_of_element_located((By.ID, "movie_player")))
         response = driver.execute_script('return document.getElementById("movie_player")?.getPlayerResponse()')
-    except:
+    except Exception as e:
         get_video_object(driver)
     return response
 
@@ -52,8 +52,10 @@ def only_click_video(driver, videos, related_click, search_term=None):
         random_index_max = len(videos) - 1
         random_vid = random.randint(0, random_index_max)
         chosen_video = videos[random_vid]
+        chosen_title = chosen_video.find_element(By.ID, "video-title").text #get video title
     else: #if clicking related video, process provided video titles to click best fit
         chosen_video = None
+        chosen_title = ''
         highest_ratio = 0
         for video in videos:
             title = video.find_element(By.ID, "video-title").text #get video title
@@ -61,20 +63,21 @@ def only_click_video(driver, videos, related_click, search_term=None):
             if likeness > highest_ratio:
                 highest_ratio = likeness
                 chosen_video = video
+                chosen_title = title
         print("Found video with {} likeness, with the title {}".format(highest_ratio, title))
         if chosen_video == None:
             raise Exception("Error finding like video, restarting")
     try: #try to find thumbnail of random video of those passed in
         video_thumbnail = chosen_video.find_element(By.TAG_NAME, "ytd-thumbnail")
-        WebDriverWait(driver, timeout=5).until(EC.visibility_of(video_thumbnail))
+        #WebDriverWait(driver, timeout=5).until(EC.visibility_of(video_thumbnail))
         link = video_thumbnail.find_element(By.CSS_SELECTOR, "a#thumbnail").get_attribute("href")
-    except: #retry if cannot locate element
+    except Exception as e: #retry if cannot locate element
         only_click_video(driver, videos, related_click, search_term)
     if "watch" in link: #check the link to see if it's a video
         try: #try to click thumbnail if it is a video
             WebDriverWait(driver, timeout= 5).until(EC.element_to_be_clickable(video_thumbnail))
             video_thumbnail.click()
-            return link
+            WebDriverWait(driver, timeout=10).until(EC.title_contains(chosen_title))
         except: #retry if unable to click
             only_click_video(driver, videos, related_click, search_term)
     else: #restart if it's not a video  and click a different one

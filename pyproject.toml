@@ -25,8 +25,7 @@ dependencies = [
 "pandas",
 "termcolor",
 "InquirerPy",
-"gdown",
-"langdetect"
+"gdown"
 ]
 
 [project.scripts]
