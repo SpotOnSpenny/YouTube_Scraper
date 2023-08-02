@@ -16,6 +16,8 @@ from youtube_scraper.core.youtube_utils import search_for_term, get_video_object
 process_queue = queue.Queue() #instantiate queue for processing with threads
 downloaded_ads = 0
 clicks_without_ad = 1
+new = 0
+duplicates = 0
 
 # ----- YouTube Scraper Entrypoint -----
 def entrypoint():   
@@ -58,7 +60,9 @@ def entrypoint():
     end_time = timer()
     time_in_mins = int(end_time - start_time)/60
     execution_time = colored("Found {} ads in {} mins.".format(downloaded_ads, time_in_mins), "magenta")
+    new_duplicate = colored("Of the found ads, {} were new, and {} were duplicates".format(new, duplicates), "magenta")
     print(execution_time)
+    print(new_duplicate)
     exit
 
 def find_and_process(search_term, download_target, profile):
@@ -101,15 +105,19 @@ def processing_thread():
     global downloaded_ads
     global dataframe
     global clicks_without_ad
+    global new
+    global duplicates
 
     while True:
         task = process_queue.get() #get process from queue
         if task is None: # break if the task is none, set when target hit
             break
         video_obj, clicks, search_term, profile = task
-        processed, dataframe, ad_present = process_data(video_obj, dataframe, clicks, search_term, profile)
+        processed, dataframe, ad_present, new_ads, duplicate_ads = process_data(video_obj, dataframe, clicks, search_term, profile)
         if ad_present == True:
             clicks_without_ad = 1
         else:
             clicks_without_ad += 1
         downloaded_ads += processed
+        new += new_ads
+        duplicates += duplicate_ads

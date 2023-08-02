@@ -79,6 +79,8 @@ def only_click_video(driver, videos, related_click, search_term=None):
             video_thumbnail.click()
             WebDriverWait(driver, timeout=10).until(EC.title_contains(chosen_title))
         except: #retry if unable to click
+            videos = videos.remove(chosen_video)
             only_click_video(driver, videos, related_click, search_term)
     else: #restart if it's not a video  and click a different one
+        videos = videos.remove(chosen_video)
         only_click_video(driver, videos, related_click, search_term)

@@ -41,6 +41,8 @@ def process_data(response, index, clicks, search_term, profile):
     already_downloaded = colored("A duplicate ad was found, no need to download!", 'magenta')
 
     #----- Script -----
+    new = 0
+    duplicates = 0
     ads = list(find_values(response, "instreamVideoAdRenderer")) #determine if an ad exists on the video
     processed = 0
     if ads == []: #when there are no ads, move on
@@ -55,9 +57,11 @@ def process_data(response, index, clicks, search_term, profile):
             ad_id = ad["externalVideoId"]
             if check_for_duplicate(ad_id) == False: #if ad hasn't been downloaded yet, download it
                 download_status = download_ad(ad_id)
+                new += 1
             else:
                 download_status = True
                 print(already_downloaded)
+                duplicates += 1
             ad_metadata = [{
                 "Ad ID": ad_id,
                 "Profile Used": profile,
@@ -74,7 +78,7 @@ def process_data(response, index, clicks, search_term, profile):
             processed += 1
             print(ad_added)
         index.to_csv(path_or_buf="./youtube_scraper/downloaded_ads/ad_index.csv", index=False) #save CSV incase of error
-        return processed, index, ad_present
+        return processed, index, ad_present, new, duplicates
     
 def check_for_duplicate(ad_id):
     working_directory = os.getcwd() #get current directory
