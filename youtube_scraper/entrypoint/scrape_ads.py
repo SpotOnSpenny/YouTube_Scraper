@@ -97,10 +97,13 @@ def find_and_process(search_term, download_target, profile):
         if clicks_without_ad > 9:
             clicks_without_ad = 0
             break
-    driver.close()
-    process_queue.put(None)
-    thread.join()
-
+    try:
+        driver.close()    
+        process_queue.put(None)
+        thread.join()
+    except:
+        pass #driver/thread already closed because of error, no need to call
+    
 def processing_thread():
     global downloaded_ads
     global dataframe

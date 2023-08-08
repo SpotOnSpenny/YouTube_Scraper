@@ -1,5 +1,6 @@
 # ----- Python Standard Library -----
 import os
+import json
 
 # ----- External Dependencies -----
 import pandas
@@ -48,13 +49,18 @@ def process_data(response, index, clicks, search_term, profile):
     if ads == []: #when there are no ads, move on
         print(no_ads)
         ad_present = False
-        return processed, index, ad_present
+        return processed, index, ad_present, new, duplicates
     else: #when there are ads, find data about the video they're on
         vid_data = find_values(response, "videoDetails", "isFamilySafe")
         ad_present = True
         video_specifics, family_safe = vid_data
         for ad in ads:
-            ad_id = ad["externalVideoId"]
+            try:
+                ad_id = ad["externalVideoId"]
+            except:
+                with open("no externalVideoID.json", 'w') as outfile: #save json response for troubleshooting
+                    json.dump(response, outfile)
+                continue #next iteration
             if check_for_duplicate(ad_id) == False: #if ad hasn't been downloaded yet, download it
                 download_status = download_ad(ad_id)
                 new += 1
@@ -62,12 +68,16 @@ def process_data(response, index, clicks, search_term, profile):
                 download_status = True
                 print(already_downloaded)
                 duplicates += 1
+            try:
+                endpoint = ad["clickthroughEndpoint"]["urlEndpoint"]["url"]
+            except:
+                endpoint = "no endpoint"
             ad_metadata = [{
                 "Ad ID": ad_id,
                 "Profile Used": profile,
                 "Clicks Deep": clicks,
                 "Found on Search": search_term,
-                "Ad Endpoint": ad["clickthroughEndpoint"]["urlEndpoint"]["url"],
+                "Ad Endpoint": endpoint,
                 "Found on Video": video_specifics["title"],
                 "Posting Channel": video_specifics["author"],
                 "Family Safe": str(family_safe),
