@@ -30,3 +30,4 @@ dependencies = [
 
 [project.scripts]
 scrape = "youtube_scraper.entrypoint.scrape_ads:entrypoint"
+get_json = "youtube_scraper.entrypoint.csv_to_json:entrypoint"
