@@ -1,4 +1,5 @@
 build/
 M2K_YouTube_Scraper.egg-info/
 youtube_scraper/downloaded_ads/
+youtube_scraper/json
 youtube_scraper/chrome_profiles
