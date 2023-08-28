@@ -1,5 +1,7 @@
 # standard python library dependencies
 import pandas
+import os
+import datetime
 
 # external dependencies
 from termcolor import colored
@@ -14,6 +16,11 @@ def entrypoint():
     )
 
     print(start_message)
-    dataframe = pandas.read_csv("youtube_scraper/downloaded_ads/ad_index.csv")
-    dataframe.to_json("youtube_scraper/json/ads.json", orient="records")
+    date = datetime.datetime.now().date()
+    working_directory = os.getcwd()
+    index_file_path = os.path.join(
+        working_directory, "youtube_scraper/downloaded_ads/ad_index.csv"
+    )
+    dataframe = pandas.read_csv(index_file_path)
+    dataframe.to_json("youtube_scraper/json/{}.json".format(date), orient="records")
     print(complete_message)

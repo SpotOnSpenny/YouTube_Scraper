@@ -2,6 +2,8 @@
 from timeit import default_timer as timer
 import threading
 import queue
+from datetime import datetime
+from pytz import timezone
 
 # ----- External Dependencies -----
 from termcolor import colored
@@ -97,9 +99,10 @@ def entrypoint():
     ).execute()
     global dataframe
     dataframe = find_index()  # find index or create new dataframe for ads
+    date = datetime.now(tz=timezone("MST")).date()
     start_time = timer()
     while downloaded_ads < download_target:
-        find_and_process(search_term, download_target, profile)
+        find_and_process(search_term, download_target, profile, date)
     end_time = timer()
     time_in_mins = int(end_time - start_time) / 60
     execution_time = colored(
@@ -114,25 +117,25 @@ def entrypoint():
     exit
 
 
-def find_and_process(search_term, download_target, profile):
+def find_and_process(search_term, download_target, profile, date):
     # ----- Script -----
     global clicks_without_ad
     try:
         driver = start_webdriver(profile)
     except Exception as e:
-        print(e)
+        print("Error on web driver start:", e.message)
         print("Could not open web browser, restarting")
-        find_and_process(search_term, download_target, profile)
+        find_and_process(search_term, download_target, profile, date)
     thread = threading.Thread(target=processing_thread)
     clicks = 1
     try:  # first video click
         search_for_term(driver, search_term)
         video_obj = get_video_object(driver)
         thread.start()
-        process_queue.put((video_obj, clicks, search_term, profile))
+        process_queue.put((video_obj, clicks, search_term, profile, date))
     except:
         driver.close()
-        find_and_process(search_term, download_target, profile)
+        find_and_process(search_term, download_target, profile, date)
     while downloaded_ads < download_target:
         clicks += 1
         try:  # if cannot find like related video, break and restart browser
@@ -142,7 +145,7 @@ def find_and_process(search_term, download_target, profile):
             clicks_without_ad = 1
             break
         video_obj = get_video_object(driver)
-        process_queue.put((video_obj, clicks, search_term, profile))
+        process_queue.put((video_obj, clicks, search_term, profile, date))
         if clicks_without_ad > 9:
             clicks_without_ad = 0
             break
@@ -165,9 +168,9 @@ def processing_thread():
         task = process_queue.get()  # get process from queue
         if task is None:  # break if the task is none, set when target hit
             break
-        video_obj, clicks, search_term, profile = task
+        video_obj, clicks, search_term, profile, date = task
         processed, dataframe, ad_present, new_ads, duplicate_ads = process_data(
-            video_obj, dataframe, clicks, search_term, profile
+            video_obj, dataframe, clicks, search_term, profile, date
         )
         if ad_present == True:
             clicks_without_ad = 1
