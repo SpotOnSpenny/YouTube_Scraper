@@ -20,7 +20,6 @@ class StartupError(Exception):
         self.message = message
 
 
-
 def start_webdriver(profile):
     # ----- Colored Messages -----
     profile_statement = colored(
@@ -97,3 +96,22 @@ def download_profiles(install_dir):
     zipped_file = zip(zip_output)
     zipped_file.extractall(extract_output)
     print(extracted)
+
+
+# ----- Open New Tab for Restarting Search -----
+def new_tab(driver):
+    driver.switch_to.new_window("tab")
+    driver.get("https://youtube.com")
+    if len(driver.window_handles) == 1:
+        print("one")
+        pass
+    if len(driver.window_handles) != 1:
+        print("multiple windows")
+        youtube_handle = ""
+        for handle in driver.window_handles:
+            driver.switch_to.window(handle)
+            if driver.title != "YouTube":
+                driver.close()
+            else:
+                youtube_handle = handle
+        driver.switch_to.window(youtube_handle)

@@ -11,7 +11,7 @@ from InquirerPy import inquirer, get_style
 
 # ----- Internal Dependencies -----
 from youtube_scraper.core.ad_processing import find_index, process_data
-from youtube_scraper.core.selenium_utils import start_webdriver
+from youtube_scraper.core.selenium_utils import start_webdriver, new_tab
 from youtube_scraper.core.youtube_utils import (
     search_for_term,
     get_video_object,
@@ -117,15 +117,17 @@ def entrypoint():
     exit
 
 
-def find_and_process(search_term, download_target, profile, date):
+def find_and_process(search_term, download_target, profile, date, driver=None):
     # ----- Script -----
     global clicks_without_ad
-    try:
-        driver = start_webdriver(profile)
-    except Exception as e:
-        print("Error on web driver start:", e.message)
-        print("Could not open web browser, restarting")
-        find_and_process(search_term, download_target, profile, date)
+    no_ad = colored("No ad found in 10 videos, starting again in a new tab...", "red")
+    if not driver:  # if no current driver
+        try:
+            driver = start_webdriver(profile)
+        except Exception as e:
+            print("Error on web driver start:", e.message)
+            print("Could not open web browser, restarting")
+            find_and_process(search_term, download_target, profile, date)
     thread = threading.Thread(target=processing_thread)
     clicks = 1
     try:  # first video click
@@ -134,23 +136,32 @@ def find_and_process(search_term, download_target, profile, date):
         thread.start()
         process_queue.put((video_obj, clicks, search_term, profile, date))
     except:
-        driver.close()
-        find_and_process(search_term, download_target, profile, date)
+        new_tab(driver)
+        process_queue.put(None)
+        thread.join()
+        find_and_process(search_term, download_target, profile, date, driver=driver)
     while downloaded_ads < download_target:
         clicks += 1
-        try:  # if cannot find like related video, break and restart browser
+        try:  # if cannot find like related video, recur in new window
             click_related_video(driver, search_term)
         except Exception as e:
             print(e)
             clicks_without_ad = 1
-            break
+            new_tab(driver)
+            process_queue.put(None)
+            thread.join()
+            find_and_process(search_term, download_target, profile, date, driver=driver)
         video_obj = get_video_object(driver)
         process_queue.put((video_obj, clicks, search_term, profile, date))
         if clicks_without_ad > 9:
+            print(no_ad)
             clicks_without_ad = 0
-            break
+            new_tab(driver)
+            process_queue.put(None)
+            thread.join()
+            find_and_process(search_term, download_target, profile, date, driver=driver)
     try:
-        driver.close()
+        driver.quit()
         process_queue.put(None)
         thread.join()
     except:
