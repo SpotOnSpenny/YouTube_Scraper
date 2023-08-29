@@ -100,21 +100,10 @@ def entrypoint():
     global dataframe
     dataframe = find_index()  # find index or create new dataframe for ads
     date = datetime.now(tz=timezone("MST")).date()
+    global start_time
     start_time = timer()
-    while downloaded_ads < download_target:
-        find_and_process(search_term, download_target, profile, date)
-    end_time = timer()
-    time_in_mins = int(end_time - start_time) / 60
-    execution_time = colored(
-        "Found {} ads in {} mins.".format(downloaded_ads, time_in_mins), "magenta"
-    )
-    new_duplicate = colored(
-        "Of the found ads, {} were new, and {} were duplicates".format(new, duplicates),
-        "magenta",
-    )
-    print(execution_time)
-    print(new_duplicate)
-    exit
+    find_and_process(search_term, download_target, profile, date)
+    exit()
 
 
 def find_and_process(search_term, download_target, profile, date, driver=None):
@@ -137,8 +126,7 @@ def find_and_process(search_term, download_target, profile, date, driver=None):
         process_queue.put((video_obj, clicks, search_term, profile, date))
     except:
         new_tab(driver)
-        process_queue.put(None)
-        thread.join()
+        print("new tab opened, error starting thread")
         find_and_process(search_term, download_target, profile, date, driver=driver)
     while downloaded_ads < download_target:
         clicks += 1
@@ -148,8 +136,10 @@ def find_and_process(search_term, download_target, profile, date, driver=None):
             print(e)
             clicks_without_ad = 1
             new_tab(driver)
+            print("new tab opened")
             process_queue.put(None)
             thread.join()
+            print("finished joining")
             find_and_process(search_term, download_target, profile, date, driver=driver)
         video_obj = get_video_object(driver)
         process_queue.put((video_obj, clicks, search_term, profile, date))
@@ -157,15 +147,36 @@ def find_and_process(search_term, download_target, profile, date, driver=None):
             print(no_ad)
             clicks_without_ad = 0
             new_tab(driver)
+            print("new tab opened")
             process_queue.put(None)
             thread.join()
+            print("finished joining")
             find_and_process(search_term, download_target, profile, date, driver=driver)
     try:
         driver.quit()
+        print("driver successfully quit")
         process_queue.put(None)
+        print("none added to queue")
         thread.join()
-    except:
-        pass  # driver/thread already closed because of error, no need to call
+        print("threads joined on end")
+        end_time = timer()
+        time_in_mins = int(end_time - start_time) / 60
+        execution_time = colored(
+            "Found {} ads in {} mins.".format(downloaded_ads, time_in_mins), "magenta"
+        )
+        new_duplicate = colored(
+            "Of the found ads, {} were new, and {} were duplicates".format(
+                new, duplicates
+            ),
+            "magenta",
+        )
+        print(execution_time)
+        print(new_duplicate)
+        exit(200)
+    except Exception as e:
+        print("an exception occured ending")
+        print(e)
+        return
 
 
 def processing_thread():

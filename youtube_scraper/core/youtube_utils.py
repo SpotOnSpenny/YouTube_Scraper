@@ -31,6 +31,7 @@ def search_for_term(driver, search_term):
     search_results = driver.find_elements(
         By.CSS_SELECTOR, "ytd-video-renderer.ytd-item-section-renderer"
     )
+    print("Found videos")
     only_click_video(driver, search_results, False)
     pass
 
@@ -64,7 +65,9 @@ def get_video_object(driver):
     return response
 
 
-def only_click_video(driver, videos, related_click, search_term=None, do_not_click=[]):
+def only_click_video(
+    driver, videos, related_click=False, search_term=None, do_not_click=[]
+):
     if related_click == False:  # if first search and click, click a random video
         random_index_max = len(videos) - 1
         random_vid = random.randint(0, random_index_max)
@@ -72,6 +75,7 @@ def only_click_video(driver, videos, related_click, search_term=None, do_not_cli
         chosen_title = chosen_video.find_element(
             By.ID, "video-title"
         ).text  # get video title
+        print(f"chose video: {chosen_title}")
     else:  # if clicking related video, process provided video titles to click best fit
         chosen_video = None
         chosen_title = ""
@@ -100,13 +104,14 @@ def only_click_video(driver, videos, related_click, search_term=None, do_not_cli
             )
     try:  # try to find thumbnail of random video of those passed in
         video_thumbnail = chosen_video.find_element(By.TAG_NAME, "ytd-thumbnail")
-        # WebDriverWait(driver, timeout=5).until(EC.visibility_of(video_thumbnail))
+        print("found thumbnail")
         link = video_thumbnail.find_element(
             By.CSS_SELECTOR, "a#thumbnail"
         ).get_attribute("href")
     except Exception as e:  # retry if cannot locate element
         click_related_video(driver, search_term)
     if "watch" in link:  # check the link to see if it's a video
+        print(f"found {link}, trying to click")
         try:  # try to click thumbnail if it is a video
             WebDriverWait(driver, timeout=5).until(
                 EC.element_to_be_clickable(video_thumbnail)
@@ -115,6 +120,14 @@ def only_click_video(driver, videos, related_click, search_term=None, do_not_cli
             WebDriverWait(driver, timeout=10).until(EC.title_contains(chosen_title))
         except:  # retry if unable to click
             click_related_video(driver, search_term)
-    else:  # restart if it's not a video  and click a different one
+    elif (
+        "watch" not in link and related_click == False
+    ):  # restart if it's not a video and click a different one (first click)
+        search_for_term(driver, search_term)
+    else:  # restart if it's not a video and click a different one (related click)
         do_not_click = do_not_click.append(chosen_title)
-        click_related_video(driver, search_term, do_not_click=do_not_click)
+        click_related_video(
+            driver,
+            search_term,
+            do_not_click=do_not_click,
+        )
