@@ -38,14 +38,19 @@ def search_for_term(driver, search_term):
 
 def click_related_video(driver, search_term, do_not_click=[]):
     # get related videos
-    try:
-        related_videos = []
-        while len(related_videos) < 10:  # wait for all related video items to render
-            related_videos = driver.find_elements(
-                By.TAG_NAME, "ytd-compact-video-renderer"
-            )  # find all related video elements now that they've rendered
-    except:
-        click_related_video(driver, search_term, do_not_click)
+    i = 1
+    related_videos = []
+    while (
+        len(related_videos) < 10 and i < 7
+    ):  # wait for all related video items to render
+        related_videos = driver.find_elements(
+            By.TAG_NAME, "ytd-compact-video-renderer"
+        )  # find all related video elements now that they've rendered
+        if len(related_videos) < 10:
+            time.sleep(2)
+            i += 1
+    if i >= 7:
+        raise Exception("No related videos presented")
     try:
         only_click_video(driver, related_videos, True, search_term, do_not_click)
     except Exception as e:
@@ -53,16 +58,20 @@ def click_related_video(driver, search_term, do_not_click=[]):
 
 
 def get_video_object(driver):
-    try:
-        WebDriverWait(driver, timeout=5).until(
-            EC.visibility_of_element_located((By.ID, "movie_player"))
-        )
-        response = driver.execute_script(
-            'return document.getElementById("movie_player")?.getPlayerResponse()'
-        )
-    except Exception as e:
-        get_video_object(driver)
-    return response
+    i = 1
+    while i < 7:
+        try:
+            WebDriverWait(driver, timeout=5).until(
+                EC.visibility_of_element_located((By.ID, "movie_player"))
+            )
+            response = driver.execute_script(
+                'return document.getElementById("movie_player")?.getPlayerResponse()'
+            )
+            return response
+        except:
+            print("no video")
+            i += 1
+    raise Exception("Could not get 'movie player' object")
 
 
 def only_click_video(
@@ -104,22 +113,24 @@ def only_click_video(
             )
     try:  # try to find thumbnail of random video of those passed in
         video_thumbnail = chosen_video.find_element(By.TAG_NAME, "ytd-thumbnail")
-        print("found thumbnail")
         link = video_thumbnail.find_element(
             By.CSS_SELECTOR, "a#thumbnail"
         ).get_attribute("href")
     except Exception as e:  # retry if cannot locate element
         click_related_video(driver, search_term)
     if "watch" in link:  # check the link to see if it's a video
-        print(f"found {link}, trying to click")
         try:  # try to click thumbnail if it is a video
             WebDriverWait(driver, timeout=5).until(
                 EC.element_to_be_clickable(video_thumbnail)
             )
             video_thumbnail.click()
-            WebDriverWait(driver, timeout=10).until(EC.title_contains(chosen_title))
+
         except:  # retry if unable to click
             click_related_video(driver, search_term)
+        try:
+            WebDriverWait(driver, timeout=15).until(EC.title_contains(chosen_title))
+        except:
+            raise Exception("video likely unavailable")
     elif (
         "watch" not in link and related_click == False
     ):  # restart if it's not a video and click a different one (first click)

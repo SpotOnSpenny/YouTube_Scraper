@@ -114,8 +114,6 @@ def find_and_process(search_term, download_target, profile, date, driver=None):
         try:
             driver = start_webdriver(profile)
         except Exception as e:
-            print("Error on web driver start:", e.message)
-            print("Could not open web browser, restarting")
             find_and_process(search_term, download_target, profile, date)
     thread = threading.Thread(target=processing_thread)
     clicks = 1
@@ -126,39 +124,37 @@ def find_and_process(search_term, download_target, profile, date, driver=None):
         process_queue.put((video_obj, clicks, search_term, profile, date))
     except:
         new_tab(driver)
-        print("new tab opened, error starting thread")
         find_and_process(search_term, download_target, profile, date, driver=driver)
     while downloaded_ads < download_target:
         clicks += 1
         try:  # if cannot find like related video, recur in new window
             click_related_video(driver, search_term)
         except Exception as e:
-            print(e)
             clicks_without_ad = 1
             new_tab(driver)
-            print("new tab opened")
             process_queue.put(None)
             thread.join()
-            print("finished joining")
             find_and_process(search_term, download_target, profile, date, driver=driver)
-        video_obj = get_video_object(driver)
+        try:
+            video_obj = get_video_object(driver)
+        except:
+            clicks_without_ad = 1
+            new_tab(driver)
+            process_queue.put(None)
+            thread.join()
+            find_and_process(search_term, download_target, profile, date, driver=driver)
         process_queue.put((video_obj, clicks, search_term, profile, date))
         if clicks_without_ad > 9:
             print(no_ad)
             clicks_without_ad = 0
             new_tab(driver)
-            print("new tab opened")
             process_queue.put(None)
             thread.join()
-            print("finished joining")
             find_and_process(search_term, download_target, profile, date, driver=driver)
     try:
         driver.quit()
-        print("driver successfully quit")
         process_queue.put(None)
-        print("none added to queue")
         thread.join()
-        print("threads joined on end")
         end_time = timer()
         time_in_mins = int(end_time - start_time) / 60
         execution_time = colored(

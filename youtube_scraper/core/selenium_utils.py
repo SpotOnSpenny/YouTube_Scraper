@@ -50,16 +50,16 @@ def start_webdriver(profile):
     options.add_argument("--user-data-dir={}".format(accounts_dir))
     match profile:  # Add profile to options depending on profile selected
         case "4 YO Female":
-            options.add_argument(r"--profile-directory=Profile 3")
-            print(profile_statement)
-        case "4 YO Male":
-            options.add_argument(r"--profile-directory=Profile 2")
-            print(profile_statement)
-        case "6 YO Male":
             options.add_argument(r"--profile-directory=Profile 4")
             print(profile_statement)
+        case "4 YO Male":
+            options.add_argument(r"--profile-directory=Profile 5")
+            print(profile_statement)
+        case "6 YO Male":
+            options.add_argument(r"--profile-directory=Profile 6")
+            print(profile_statement)
         case "7 YO Female":
-            options.add_argument(r"--profile-directory=Profile 2")
+            options.add_argument(r"--profile-directory=Profile 7")
             print(profile_statement)
         case "9 YO Female":
             options.add_argument(r"--profile-directory=Profile 2")
@@ -106,11 +106,10 @@ def new_tab(driver):
         print("one")
         pass
     if len(driver.window_handles) != 1:
-        print("multiple windows")
         youtube_handle = ""
         for handle in driver.window_handles:
             driver.switch_to.window(handle)
-            if driver.title != "YouTube":
+            if driver.current_url != r"https://www.youtube.com/":
                 driver.close()
             else:
                 youtube_handle = handle
