@@ -4,3 +4,4 @@ youtube_scraper/downloaded_ads/
 youtube_scraper/json
 youtube_scraper/chrome_profiles
 .env
+m2k_scrape/

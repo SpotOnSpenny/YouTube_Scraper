@@ -9,14 +9,16 @@ from datetime import datetime
 # ----- Internal Dependencies -----
 
 
-def start_logger(level, locale="file", port=None):
+def start_logger(level, profile, locale="file", filename=None, port=None):
     # ----- Load env variables and use to instantiate remote logging -----
     logger = logging.getLogger()
     match locale:
         case "remote":
             try:
                 syslog = SysLogHandler(address=("logs.papertrailapp.com", port))
-                format = "%(asctime)s | DOC_OPT_TEST | %(levelname)s - %(message)s"
+                format = "%(asctime)s | {} | %(levelname)s - %(message)s".format(
+                    profile
+                )
                 formatter = logging.Formatter(format, datefmt="%Y-%m-%d %H:%M:%S")
                 syslog.setFormatter(formatter)
                 logger.addHandler(syslog)
@@ -24,12 +26,17 @@ def start_logger(level, locale="file", port=None):
                 print(e)
         case "file":
             working_directory = os.getcwd()  # get current directory
-            log_path = os.path.join(working_directory, "youtube_scraper/logs")
-            date = datetime.datetime.now().date()
+            log_path = os.path.join(working_directory, "m2k_scrape/logs")
+            if not filename:
+                filename = datetime.now().date()
+            try:
+                os.makedirs(log_path)
+            except FileExistsError:
+                pass
             logging.basicConfig(
-                filename=f"{log_path}/{date}.txt",
+                filename=f"{log_path}/{filename}.txt",
                 filemode="a",
-                format="%(asctime)s | DOC_OPT_TEST | %(levelname)s - %(message)s",
+                format="%(asctime)s | {} | %(levelname)s - %(message)s".format(profile),
                 datefmt="%Y-%m-%d %H:%M:%S",
             )
         case _:
