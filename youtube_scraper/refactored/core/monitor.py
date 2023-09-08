@@ -4,25 +4,44 @@
 import logging
 from logging.handlers import SysLogHandler
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
+from itertools import chain
+import time
 
 # ----- Internal Dependencies -----
-
+from youtube_scraper.refactored.utilities.selenium import start_webdriver
 
 # ----- Monitor Script -----
 def monitor(logger, time_target, profile):
     # Locate json containing search terms
     dir_name = os.path.dirname(os.path.abspath(__file__))
-    print(dir_name) # path to youtube_scraper folder on current machine
     with open(os.path.join(dir_name, "search_terms.json")) as search_terms_file:
         search_terms = json.load(search_terms_file)
-    test = list(map(lambda json_data: json_data["search terms"] if json_data["profile"] == profile else None, search_terms))
-    print(test)
+
+    #Create list of all search terms with matching profile to the one provided
+    search_terms = list(chain.from_iterable([dict["search terms"] for dict in search_terms if dict["profile"] == profile]))
+
     # Math out how long to search for each term based on time_target
+    time_per_search = round(time_target*60/len(search_terms))
+
+    # Open up web browser with provided profile
+    try:
+        driver = start_webdriver(profile)
+    except Exception as e:
+        #TODO Log error
+        print(e)
+        pass
+
     # For each search term
-    # Start Timer
-    # Start 10 Video Clock
+    for search in search_terms:
+        # Start Timer
+        end_time = datetime.now() + timedelta(minutes=time_per_search)
+        while datetime.now() < end_time:
+            # Start 10 Video Clock
+            clicks_without_ads = 1
+            print(search)
+            time.sleep(5)
     # Make Search
     # Click Video from Search
     # Start Processing Thread
@@ -47,4 +66,4 @@ def monitor(logger, time_target, profile):
 
 # ----- run for testing -----
 if __name__ == "__main__":
-    monitor(None, None, None)
+    monitor(None, 0.1, None)
