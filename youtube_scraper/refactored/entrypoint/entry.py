@@ -21,8 +21,7 @@ def main():
 
     Options:
         -l, --log-level     REQUIRED: Specify the level of log messages you'd like to be logged. [default: INFO]
-        -r, --remote        Log to papertrail. A port must be specified if this option is selected.
-        -c, --central       Log on your machine to a .txt file, and specify a filename to save to.
+        -r, --log-location  REQUIRED: Specify the desired location of logs output by the script. [default: REMOTE]
         -p, --profile       Specify the age/gender profile you'd like to use to collect/monitor ads. If not specified, interactive mode will be used.
         -t, --time          Specify how long you'd like to monitor ads for continuously in hours.
         -n, --number        Specify the number of ads you'd like to collect. If not specified, interactive mode will be used.
