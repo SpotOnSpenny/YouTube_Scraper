@@ -19,7 +19,7 @@ class StartupError(Exception):
 def start_webdriver(profile):
     # ----- Script -----
     options = Options()  # instantiate options
-    dir_name = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # path to youtube_scraper folder on current machine
+    dir_name = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))) #TODO remove one .dirname when this is no longer in refactored folder
     service = Service(executable_path=os.path.join(dir_name, "chromedriver.exe"))
     accounts_dir = r"C:\Users\Spencer\AppData\Local\Google\Chrome\User Data" #TODO Find a way to make consistent
     options.add_argument("--user-data-dir={}".format(accounts_dir))
@@ -45,3 +45,6 @@ def start_webdriver(profile):
         raise StartupError("Error starting chrome webdriver")
     driver.get("https://youtube.com")
     return driver
+
+if __name__ == "__main__":
+    start_webdriver(None)

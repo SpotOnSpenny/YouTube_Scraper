@@ -10,7 +10,7 @@ from itertools import chain
 import time
 
 # ----- Internal Dependencies -----
-from youtube_scraper.refactored.utilities.selenium import start_webdriver
+from youtube_scraper.refactored.utilities.driver import start_webdriver
 
 # ----- Monitor Script -----
 def monitor(logger, time_target, profile):
