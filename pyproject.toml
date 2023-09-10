@@ -26,7 +26,8 @@ dependencies = [
 "termcolor",
 "InquirerPy",
 "gdown",
-"docopt"
+"docopt",
+"thefuzz"
 ]
 
 [project.scripts]
