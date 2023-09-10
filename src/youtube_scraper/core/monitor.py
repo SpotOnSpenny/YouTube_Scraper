@@ -11,6 +11,7 @@ import time
 
 # ----- Internal Dependencies -----
 from youtube_scraper.utilities.driver import start_webdriver
+from youtube_scraper.utilities.youtube import search_for_term
 
 
 # ----- Monitor Script -----
@@ -35,9 +36,9 @@ def monitor(logger, time_target, profile):
     time_per_search = round(time_target * 60 / len(search_terms))
 
     # Open up web browser with provided profile
-    for num, index in enumerate(range(1 - 6)):
+
+    for num, index in enumerate(range(1, 6)):
         try:
-            print("trying")
             driver = start_webdriver(profile)
             logger.info("Webdriver successfully started")
             break
@@ -58,12 +59,13 @@ def monitor(logger, time_target, profile):
         while datetime.now() < end_time:
             # Start 10 Video Clock
             clicks_without_ads = 1
-            print(search)
-            time.sleep(5)
-    # Make Search
-    # Click Video from Search
+
+            # Make Search and Click Vid
+            search_for_term(logger, driver, search)
+
+            # collect initial video start
+
     # Start Processing Thread
-    # While time on timer < time delta of how long to search from time start
     # Pass video object to thread
     # If no ads, then ad 1 to 10 video clock
     # If clock at 10, skip next step, set related video to None

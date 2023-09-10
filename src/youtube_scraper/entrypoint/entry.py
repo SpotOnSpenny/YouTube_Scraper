@@ -15,7 +15,7 @@ def main():
     Part of the M2K project at the University of Calgary.
 
     Usage:
-        m2k_scrape monitor -l <log_level> [-r <port> | -c <file_name>] [-p <profile>] [-t <time>]
+        m2k_scrape monitor -l <log_level> [-r <port> | -c <file_name>] [-p <profile>] [-t <monitor_time>]
         m2k_scrape collect -l <log_level> [-r <port> | -c <file_name>] [-p <profile>] [-n <number>]
         m2k_scrape json
         m2k_scrape (-h | -v)
@@ -36,7 +36,7 @@ def main():
         <file_name>         The name of the .txt file that you'd like to log to in the /logs folder of the worknig directory. If none specified, will save to a .txt named todays date.
         <profile>           The age/gender profile you'd like to use. Can be: '4M', '4F', '6M', '7F', '9F' or '10M'.
         <number>            The number of ads that you'd like to search for. Must be an integer.
-        <time>              The number of hours that you'd like to monitor ads for. Must be an integer.
+        <monitor_time>              The number of hours that you'd like to monitor ads for. Must be an integer.
     """
     # ----- Create Args Dictionary -----
     args = docopt(usage, version="0.0.5")
@@ -54,24 +54,24 @@ def main():
     # ----- Monitor -----
     # Check to ensure nessescary information was provided, and start interactive mode if it was not
     if args["monitor"]:
-        needed = ["<profile>", "<time>"]
+        required = ["<profile>", "<monitor_time>"]
+        needed = ["<profile>", "<monitor_time>"]
         allowed_profiles = ["4M", "4F", "6M", "7F", "9F", "10M", "None"]
-        for arg in needed:
+        for arg in required:
             if args[arg]:
                 if arg == "<profile>":
                     if args[arg] in allowed_profiles:
                         needed.remove(arg)
                         if args[arg] == "None":
                             args[arg] = None
-                if arg == "<time>":
+                if arg == "<monitor_time>":
                     if args[arg].isdigit():  # check that target is a number
-                        print("is digit")
                         if 1 <= int(args[arg]):  # check that target is greater than 0
-                            print("is greater than or equal to 1")
+                            args[arg] = int(args[arg])
                             needed.remove(arg)
     args = interactive_mode("monitor", args, needed)
     # Start monitor function
-    monitor(logger, args["<time>"], args["<profile>"])
+    monitor(logger, args["<monitor_time>"], args["<profile>"])
 
     # ----- Collect -----
 
@@ -79,9 +79,10 @@ def main():
 
 
 def interactive_mode(mode, args, needed):
-    print(
-        f"{mode} mode was selected, but some needed information was missing, or was invalid!"
-    )
+    if needed != []:
+        print(
+            f"{mode} mode was selected, but some needed information was missing, or was invalid!"
+        )
     # TODO Add logging params here too, no reason not to include them here tbh
     if "<profile>" in needed:
         args["<profile>"] = inquirer.select(
@@ -96,7 +97,7 @@ def interactive_mode(mode, args, needed):
                 "None",
             ],
         ).execute()
-    if "<time>" in needed:
+    if "<monitor_time>" in needed:
         valid_time = False
         while valid_time == False:
             time_target = input(
@@ -104,7 +105,7 @@ def interactive_mode(mode, args, needed):
             )
             if time_target.isdigit():  # check that target is a number
                 if 1 <= int(time_target):  # check that target is greater than 0
-                    args["<time>"] = int(
+                    args["<monitor_time>"] = int(
                         time_target
                     )  # set target to be an integer for use later
                     valid_time = True
