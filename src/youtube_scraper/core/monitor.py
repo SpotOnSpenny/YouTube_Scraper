@@ -62,7 +62,6 @@ def monitor(logger, time_target, profile):
 
             # Make Search and Click Vid
             search_for_term(logger, driver, search)
-
             # collect initial video start
 
     # Start Processing Thread

@@ -34,7 +34,7 @@ def main():
         <log_level>         The level of logs you'd like to be logged. Can be: 'debug', 'info', 'warn', 'error' or 'critical'.
         <port>              The port on your PaperTrail account, required if -r is specified.
         <file_name>         The name of the .txt file that you'd like to log to in the /logs folder of the worknig directory. If none specified, will save to a .txt named todays date.
-        <profile>           The age/gender profile you'd like to use. Can be: '4M', '4F', '6M', '7F', '9F' or '10M'.
+        <profile>           The age/gender profile you'd like to use. Can be: 'None', '4M', '4F', '6M', '7F', '9F' or '10M'.
         <number>            The number of ads that you'd like to search for. Must be an integer.
         <monitor_time>              The number of hours that you'd like to monitor ads for. Must be an integer.
     """
