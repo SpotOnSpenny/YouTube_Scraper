@@ -33,6 +33,7 @@ def search_for_term(logger, driver, search_term):
     # use search bar to look for term
     for num, index in enumerate(range(1, 6)):
         try:
+            search_bar.clear()
             search_bar.send_keys(search_term)
             search_bar.send_keys(Keys.RETURN)
             WebDriverWait(driver, timeout=5).until(EC.title_contains(search_term))
@@ -44,7 +45,6 @@ def search_for_term(logger, driver, search_term):
                     "Attempt 5/5 - Could not complete initial search, exiting with error code 1"
                 )
                 exit(1)
-            search_bar.clear()
             logger.error(
                 f"Attempt {num}/5 - A problem occured on initial search, retrying"
             )
@@ -54,7 +54,7 @@ def search_for_term(logger, driver, search_term):
             search_results = driver.find_elements(
                 By.CSS_SELECTOR, "ytd-video-renderer.ytd-item-section-renderer"
             )
-            only_click_video(logger, driver, search_results, False)
+            title_str = only_click_video(logger, driver, search_results, False)
             break
         except:
             if num == 5:
@@ -183,9 +183,7 @@ def only_click_video(logger, driver, videos, related_click=False, search_term=No
                 )
                 chosen_title.click()
                 break
-            except (
-                Exception
-            ) as e:  # re-grab title if unable to click due to possible stale element
+            except:  # re-grab title if unable to click due to possible stale element
                 if num == 5:
                     logger.error(
                         "Attempt 5/5 - Could get the link of the chosen video, raising error to re-grab list"
@@ -198,7 +196,7 @@ def only_click_video(logger, driver, videos, related_click=False, search_term=No
                     By.XPATH, f"//a/yt-formatted-string[text()='{title_str}']"
                 )
     else:
-        logger.info("Random vidoe selected was not a valid video, raising error to retry")
+        logger.info("Random video selected was not a valid video, raising error to retry")
         dont_click.append(title_str)
         raise Exception("Video was invalid, retry")
 
@@ -206,6 +204,29 @@ def only_click_video(logger, driver, videos, related_click=False, search_term=No
     try:
         WebDriverWait(driver, 10).until(EC.title_contains(title_str))
         watched.append(title_str)
+        return(title_str)
     except:
-        print("title did not contain str")
+        dont_click.append(title_str)
         raise Exception("video likely unavailable")
+
+def get_video_object(driver, logger, title_str):
+    for num, index in enumerate(range(1,6)):
+        try:
+            WebDriverWait(driver, timeout=5).until(
+                EC.visibility_of_element_located((By.ID, "movie_player"))
+            )
+            response = driver.execute_script(
+                'return document.getElementById("movie_player")?.getPlayerResponse()'
+            )
+            return response
+        except Exception as e:
+            if num == 5:
+                logger.error(
+                    "Attempt 5/5 - Could not get the video object, adding to do not click list to try again"
+                )
+                dont_click.append(title_str)
+                driver.back()
+                raise AttributeError  # TODO Create custom error types (though it's not in logs so it doesn't REALLY matter)
+            logger.warn(
+                f"Attempt {num}/5 - A problem occured getting the video object, retrying"
+            )

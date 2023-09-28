@@ -8,10 +8,19 @@ from datetime import datetime, timedelta
 import json
 from itertools import chain
 import time
+from pytz import timezone
 
 # ----- Internal Dependencies -----
 from youtube_scraper.utilities.driver import start_webdriver
-from youtube_scraper.utilities.youtube import search_for_term
+from youtube_scraper.utilities.youtube import search_for_term, get_video_object
+from youtube_scraper.utilities.video_processing import find_index, process_data
+
+# ----- Environment Setup -----
+#set up tracking vars
+downloaded_ads = 0
+new = 0
+duplicates = 0
+clicks = 1
 
 
 # ----- Monitor Script -----
@@ -32,11 +41,13 @@ def monitor(logger, time_target, profile):
         )
     )
 
+    # Locate or create the dataframe to use and add ads to
+    index = find_index(logger)
+
     # Math out how long to search for each term based on time_target
     time_per_search = round(time_target * 60 / len(search_terms))
 
     # Open up web browser with provided profile
-
     for num, index in enumerate(range(1, 6)):
         try:
             driver = start_webdriver(profile)
@@ -57,27 +68,38 @@ def monitor(logger, time_target, profile):
         # Start Timer
         end_time = datetime.now() + timedelta(minutes=time_per_search)
         while datetime.now() < end_time:
-            # Start 10 Video Clock
-            clicks_without_ads = 1
+            for num, index in enumerate(range(1, 6)):
+                try:
+                    #Set current date
+                    date = datetime.now(tz=timezone("MST")).date()
+                    # Make Search and Click Vid
+                    title_str = search_for_term(logger, driver, search)
+                    # collect initial video start
+                    video_obj = get_video_object(driver, logger, title_str)
+                    process_data(video_obj, index, clicks, search, profile, date)
+                    break
+                except Exception as e:
+                    print(e)
+                    if num == 5:
+                        logger.error(
+                            "Attempt 5/5 - Could not grab first video data, exiting"
+                        )
+                        exit(1)
+                    logger.warn(
+                        f"Attempt {num}/5 - A problem occured grabbing first video data, retrying"
+                    )
 
-            # Make Search and Click Vid
-            search_for_term(logger, driver, search)
-            # collect initial video start
-
-
-    # Start Processing Thread
-    # Pass video object to thread
-    # If no ads, then ad 1 to 10 video clock
-    # If clock at 10, skip next step, set related video to None
-    # If yes ads, then set clock to 0
-    # If 10 video clock not at 10
+            # Start Timer
+            parse_start = datetime.now()
+            # Parse object
     # Parse through titles of related videos for like videos
-    # If one is found above threshold of like 65% (? maybe ask sara if she knows a way to make this significant) store title
+    # If one is found above threshold of like 50% store title
     # If one not found, related video = None
-    # Wait for video to be 5-20 seconds from ending
+    # End Timer
+    # Wait for video to be 5-20 seconds from ending (remove processing time and timer from the video length)
     # If related video = None
     # Click the search bar again and start over
-    # Set 10 video clock to 0
+    # Else
     # Find element with related Click related video
     # Click the related video
     # Wait browser title to change
