@@ -64,6 +64,7 @@ def monitor(logger, time_target, profile):
             search_for_term(logger, driver, search)
             # collect initial video start
 
+
     # Start Processing Thread
     # Pass video object to thread
     # If no ads, then ad 1 to 10 video clock

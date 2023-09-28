@@ -10,6 +10,8 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from thefuzz import fuzz
 
+watched = []
+dont_click = []
 
 def search_for_term(logger, driver, search_term):
     # locate search bar
@@ -106,13 +108,17 @@ def only_click_video(logger, driver, videos, related_click=False, search_term=No
     if related_click == False:  # if first search and click, click a random video
         for num, index in enumerate(range(1, 6)):
             try:
-                random_index_max = len(videos) - 1
-                random_vid = random.randint(0, random_index_max)
-                chosen_video = videos[random_vid]
-                chosen_title = chosen_video.find_element(
-                    By.ID, "video-title"
-                )  # get video title
-                title_str = chosen_title.text
+                valid_video_found = False
+                while not valid_video_found:
+                    random_index_max = len(videos) - 1
+                    random_vid = random.randint(0, random_index_max)
+                    chosen_video = videos[random_vid]
+                    chosen_title = chosen_video.find_element(
+                        By.ID, "video-title"
+                    )  # get video title
+                    title_str = chosen_title.text
+                    if title_str not in watched and title_str not in dont_click:
+                        valid_video_found = True
                 print(f"chose video: {title_str} on attempt {num}")
                 break
             except:
@@ -191,25 +197,15 @@ def only_click_video(logger, driver, videos, related_click=False, search_term=No
                 chosen_title = driver.find_element(
                     By.XPATH, f"//a/yt-formatted-string[text()='{title_str}']"
                 )
+    else:
+        logger.info("Random vidoe selected was not a valid video, raising error to retry")
+        dont_click.append(title_str)
+        raise Exception("Video was invalid, retry")
 
-        # Re-Do if video was unavailable, add to do not click list
-        try:
-            WebDriverWait(driver, 10).until(EC.title_contains(title_str))
-            print(
-                "title checked!"
-            )  # TODO Find solution for watched and dont click lists
-        except:
-            print("title did not contain str")
-            raise Exception("video likely unavailable")
-
-    # elif (
-    #    "watch" not in link and related_click == False
-    # ):  # restart if it's not a video and click a different one (first click)
-    #    search_for_term(driver, search_term)
-    # else:  # restart if it's not a video and click a different one (related click)
-    #    do_not_click = do_not_click.append(chosen_title)
-    #    click_related_video(
-    #        driver,
-    #        search_term,
-    #        do_not_click=do_not_click,
-    #    )
+    # Re-Do if video was unavailable, add to do not click list, and retry
+    try:
+        WebDriverWait(driver, 10).until(EC.title_contains(title_str))
+        watched.append(title_str)
+    except:
+        print("title did not contain str")
+        raise Exception("video likely unavailable")
