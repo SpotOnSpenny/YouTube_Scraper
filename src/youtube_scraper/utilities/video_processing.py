@@ -53,31 +53,27 @@ def find_values(obj, *keys):
         yield from find_values(child, *keys)
 
 # Process the video object for values we want
-def process_data(response, index, clicks, search_term, profile, date):
+def process_data(response, ad_index, clicks, search_term, profile, date):
     print("processing...")
     new = 0
     duplicates = 0
     #locate the ads
     ads = list(find_values(response, "instreamVideoAdRenderer"))  # determine if an ad exists on the video
-    processed = 0
     if ads == []:  # when there are no ads, move on
         vid_data = find_values(response, "videoDetails")
         length = vid_data["lengthSeconds"]
-        print(length)
-        return processed, index, new, duplicates
-    else:  # when there are ads, find data about the video they're on
+        ad_presence = False
+        return ad_index, new, duplicates, length, ad_presence
+    else:  # when there are ads, find data about the video they're once
+        ad_presence = True
         vid_data = find_values(response, "videoDetails", "isFamilySafe")
         video_specifics, family_safe = vid_data
         length = video_specifics["lengthSeconds"]
-        print(length)
         for ad in ads:
             try:
                 ad_id = ad["externalVideoId"]
             except:
-                ad_id = None
-                #with open(f"{video_specifics['title']}.json", "w") as outfile:  # save json response for troubleshooting
-                #    json.dump(response, outfile)
-                #continue  # next iteration
+                continue #continue if it's not the right type of item
             if (check_for_duplicate(ad_id) == False): 
                 new += 1
             else:
@@ -102,10 +98,9 @@ def process_data(response, index, clicks, search_term, profile, date):
             ]
             ad_metadata = pandas.DataFrame(ad_metadata)
             print(ad_metadata)
-            index = pandas.concat([index, ad_metadata], ignore_index=True)
-            processed += 1
-        index.to_csv(path_or_buf="./youtube_scraper/downloaded_ads/ad_index.csv", index=False)  # save CSV incase of error
-        return processed, index, new, duplicates
+            ad_index = pandas.concat([ad_index, ad_metadata], ignore_index=True)
+        ad_index.to_csv(path_or_buf="./youtube_scraper/downloaded_ads/ad_index.csv", index=False)  # save CSV incase of error
+        return ad_index, new, duplicates, length, ad_presence
 
 
 def check_for_duplicate(ad_id):
@@ -114,3 +109,35 @@ def check_for_duplicate(ad_id):
         working_directory, "youtube_scraper/downloaded_ads/{}.mp4".format(ad_id)
     )
     return os.path.isfile(ad_path)
+
+
+def determine_ad_length(video_obj):
+    # Instantiate ad time
+    ads_length = 0
+
+    # Get the ad objects from the video object
+    ads = list(find_values(video_obj, "instreamVideoAdRenderer"))
+    print(ads)
+
+    # Parse through ads for the ones we're looking for
+    for ad in ads:
+        try:
+            with open("troubleshooting.json", "w") as outfile:
+                json.dumps(ad, outfile)
+            url_list = ad["pings"]["impressionPings"]
+            print("url_list found")
+        except:
+            continue
+
+        # For each URL
+        for url in url_list:
+            # If it's the one we're looking for with the length of the ad
+            if "ad_len" in url["baseUrl"]:
+                param_list = url.split("&")
+                # Cycle through param list and look for ad_len
+                for param in param_list:
+                    # If the parameter is the length of the ad
+                    if "ad_len" in param:
+                        ad_len = int(param.split("=", 1))
+                        ads_length += ad_len
+    return ads_length
