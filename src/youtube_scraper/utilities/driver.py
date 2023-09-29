@@ -36,6 +36,10 @@ def start_webdriver(profile):
             options.add_argument(r"--profile-directory=Profile 2")
         case "10M":
             options.add_argument(r"--profile-directory=Profile 3")
+        case "18M":
+            options.add_argument(r"--profile-directory=Profile ")
+        case "18F":
+            options.add_argument(r"--profile-directory=Profile ")
         case _:
             options.arguments[:] = []
     options.add_argument("--mute-audio")

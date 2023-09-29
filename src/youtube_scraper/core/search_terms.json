@@ -103,10 +103,112 @@
     ]
 },
 {
+    "profile": "4M",
+    "search terms": [
+        "Paw Patrol",
+        "Thomas the Tank Engine",
+        "Cocomelon",
+        "Blippi", 
+        "Little Baby Bum",
+        "Toy School",
+        "Hello Kitty",
+        "Nursery rhymes",
+        "Baby Shark",
+        "blue's clues",
+        "Baby Shark", 
+        "Mickey Mouse", 
+        "PJ Mask",
+        "Spidy and his amazing friends",
+        "Robert Munch",
+        "Safari for kids",
+        "Medieval for preschool",
+        "Daniel Tiger's Neighborhood",
+        "Octonauts",
+        "dinosaur train",
+        "Curious George"
+    ]
+},
+{
+    "profile": "6M",
+    "search terms": [
+        "Minecraft",
+        "How to draw superheroes",
+        "Ironman",
+        "Captain America", 
+        "LEGO building",
+        "Monster trucks",
+        "Dinosaur videos for kids",
+        "Starwars young jedi adventures",
+        "Pokemon",
+        "Minions",
+        "Ninja Turtles", 
+        "sis vs bro", 
+        "Disney Pixar 's Cars",
+        "Lightning McQueen",
+        "Power Rangers",
+        "Dragons",
+        "Heroes of Goo Jit Zu",
+        "how to train your dragon",
+        "Hot wheels",
+        "The muppets",
+        "Astro's Playroom"
+    ]
+},
+{
+    "profile": "10M",
+    "search terms": [
+        "John Cena",
+        "Guardians of the Galaxy",
+        "The Rock",
+        "Dude Perfect", 
+        "Diary of a Wimpy Kid",
+        "Percy Jackson",
+        "Jurassic World",
+        "Rocket League",
+        "Fall Guys",
+        "Yu-Gi-Oh!",
+        "Toys and Colours", 
+        "Cool skateboard tricks", 
+        "NHL",
+        "Basketball tricks",
+        "Logan Paul",
+        "Overwatch",
+        "Valorant",
+        "Bloons Tower defense",
+        "Legend of zelda",
+        "Among us",
+        "League Of Legends"
+    ]
+},
+{
+    "profile": "18M",
+    "search terms": [
+        "UFC",
+        "Gym routine",
+        "Let's Play",
+        "Lamborghini", 
+        "Boxing",
+        "Sideman gang",
+        "Game Reviews",
+        "Sports Betting",
+        "Men diet",
+        "Outdoor Tips",
+        "Fix a car", 
+        "Max Verstappen", 
+        "Louis Vuitton",
+        "More Plates more Dates",
+        "The last of us",
+        "Pc Building",
+        "Roman Empire",
+        "Better call saul",
+        "Assassin Creed",
+        "Skiing",
+        "Fishing on the ocean"
+    ]
+},
+{
     "profile": null,
     "search terms":[
-        "frozen sing along",
-        "pokemon battles",
-        "how to build farms in minecraft"
+        "Test search"    
     ]
 }]
