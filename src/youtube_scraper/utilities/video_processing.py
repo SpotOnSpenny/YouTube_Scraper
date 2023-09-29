@@ -1,6 +1,7 @@
 # ----- Python Standard Library -----
 import os
 import json
+from math import trunc
 
 # ----- External Dependencies -----
 import pandas
@@ -22,7 +23,9 @@ def find_index(logger):
         logger.info("Index found! Using existing csv.")
         print(index_found)
     except:  # create the index csv if one not found
-        print(no_index)
+        target_dir = os.path.join(working_directory, "youtube_scraper/downloaded_ads")
+        if not os.path.exists(target_dir):
+            os.makedirs(target_dir)
         logger.info("No index csv found, creating a new one.")
         dataframe = pandas.DataFrame(
             columns=[
@@ -60,24 +63,28 @@ def process_data(response, ad_index, clicks, search_term, profile, date):
     #locate the ads
     ads = list(find_values(response, "instreamVideoAdRenderer"))  # determine if an ad exists on the video
     if ads == []:  # when there are no ads, move on
-        vid_data = find_values(response, "videoDetails")
-        length = vid_data["lengthSeconds"]
+        print("NO ADS")
+        vid_data = list(find_values(response, "videoDetails"))
+        video_specifics = vid_data[0]
+        length = int(video_specifics["lengthSeconds"])
         ad_presence = False
         return ad_index, new, duplicates, length, ad_presence
     else:  # when there are ads, find data about the video they're once
         ad_presence = True
         vid_data = find_values(response, "videoDetails", "isFamilySafe")
         video_specifics, family_safe = vid_data
-        length = video_specifics["lengthSeconds"]
+        length = int(video_specifics["lengthSeconds"])
         for ad in ads:
             try:
                 ad_id = ad["externalVideoId"]
             except:
                 continue #continue if it's not the right type of item
-            if (check_for_duplicate(ad_id) == False): 
-                new += 1
-            else:
+            if ad_index["Ad ID"].str.contains(ad_id).any(): 
                 duplicates += 1
+                print("duplicate")
+            else:
+                new += 1
+                print("new")
             try:
                 endpoint = ad["clickthroughEndpoint"]["urlEndpoint"]["url"]
             except:
@@ -97,18 +104,9 @@ def process_data(response, ad_index, clicks, search_term, profile, date):
                 }
             ]
             ad_metadata = pandas.DataFrame(ad_metadata)
-            print(ad_metadata)
             ad_index = pandas.concat([ad_index, ad_metadata], ignore_index=True)
         ad_index.to_csv(path_or_buf="./youtube_scraper/downloaded_ads/ad_index.csv", index=False)  # save CSV incase of error
         return ad_index, new, duplicates, length, ad_presence
-
-
-def check_for_duplicate(ad_id):
-    working_directory = os.getcwd()  # get current directory
-    ad_path = os.path.join(
-        working_directory, "youtube_scraper/downloaded_ads/{}.mp4".format(ad_id)
-    )
-    return os.path.isfile(ad_path)
 
 
 def determine_ad_length(video_obj):
@@ -117,15 +115,11 @@ def determine_ad_length(video_obj):
 
     # Get the ad objects from the video object
     ads = list(find_values(video_obj, "instreamVideoAdRenderer"))
-    print(ads)
 
     # Parse through ads for the ones we're looking for
     for ad in ads:
         try:
-            with open("troubleshooting.json", "w") as outfile:
-                json.dumps(ad, outfile)
             url_list = ad["pings"]["impressionPings"]
-            print("url_list found")
         except:
             continue
 
@@ -133,11 +127,12 @@ def determine_ad_length(video_obj):
         for url in url_list:
             # If it's the one we're looking for with the length of the ad
             if "ad_len" in url["baseUrl"]:
-                param_list = url.split("&")
+                param_list = url["baseUrl"].split("&")
                 # Cycle through param list and look for ad_len
                 for param in param_list:
                     # If the parameter is the length of the ad
                     if "ad_len" in param:
-                        ad_len = int(param.split("=", 1))
+                        ad_len = int(param.split("=")[1])
                         ads_length += ad_len
-    return ads_length
+    ads_length = ads_length/1000
+    return trunc(ads_length)

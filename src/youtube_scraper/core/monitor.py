@@ -4,6 +4,7 @@
 import logging
 from logging.handlers import SysLogHandler
 import os
+import traceback
 from datetime import datetime, timedelta
 import json
 from itertools import chain
@@ -12,7 +13,7 @@ from pytz import timezone
 
 # ----- Internal Dependencies -----
 from youtube_scraper.utilities.driver import start_webdriver
-from youtube_scraper.utilities.youtube import search_for_term, get_video_object, find_related_video
+from youtube_scraper.utilities.youtube import search_for_term, get_video_object, find_related_video, only_click_video, reset_globals
 from youtube_scraper.utilities.video_processing import find_index, process_data, determine_ad_length
 
 # ----- Environment Setup -----
@@ -20,7 +21,7 @@ from youtube_scraper.utilities.video_processing import find_index, process_data,
 downloaded_ads = 0
 new = 0
 duplicates = 0
-clicks = 1
+clicks = 0
 
 
 # ----- Monitor Script -----
@@ -75,8 +76,13 @@ def monitor(logger, time_target, profile):
         # Set related video to none to start
         related_video = None
 
+        # Reset global vars to empty lists
+        reset_globals()
+        logger.info(f"Reset global variables, conducting search: {search}")
+
         # While within timer
         while datetime.now() < end_time:
+
             match related_video:
                 case None:
                     for num, index in enumerate(range(1, 6)):
@@ -85,8 +91,8 @@ def monitor(logger, time_target, profile):
                             date = datetime.now(tz=timezone("MST")).date()
                             # Make Search and Click Vid
                             title_str = search_for_term(logger, driver, search)
+                            clicks += 1
                             # Collect initial video start
-                            print("getting object")
                             video_obj = get_video_object(driver, logger, title_str)
                             break
                         except Exception as e:
@@ -104,47 +110,88 @@ def monitor(logger, time_target, profile):
                     parse_start = datetime.now()
 
                     # Parse the video object for ads 
-                    try:
-                        ad_index, new_processed, duplicates_processed, length, ad_presence = process_data(video_obj, ad_index, clicks, search, profile, date)
-                    except:
-                        print("error processing")
+                    ad_index, new_processed, duplicates_processed, length, ad_presence = process_data(video_obj, ad_index, clicks, search, profile, date)
 
                     # Update globals
                     new += new_processed
                     duplicates += duplicates_processed
 
                     # Parse through titles of related videos for like videos
-                    try:
-                        related_video = find_related_video(driver, search, title_str)
-                        print(related_video)
-                    except:
-                        print("error finding related")
+                    related_video = find_related_video(driver, search, title_str)
 
                     # Determine Ad Length
-                    try:
-                        if ad_presence:
-                            length_of_ads = determine_ad_length(video_obj)
-                            print(length_of_ads)
-                    except Exception as e:
-                        print("error determining ad length")
-                        print(e)
+                    if ad_presence:
+                        length_of_ads = determine_ad_length(video_obj)
+                    else:
+                        length_of_ads = 0
 
                     # End Timer
                     parse_end = datetime.now()
-                    exit(1)
 
-                    # Wait for video to be 5-20 seconds from ending (remove processing time and timer from the video length)
-                    
+                    # Math out how long to wait and wait
+                    total_time = length + length_of_ads
+                    delta = parse_end - parse_start
+                    until_end_of_vid = total_time - delta.total_seconds() - 5 #reduce an extra 5 seconds as buffer
+                    logger.info(f"Waiting {until_end_of_vid} seconds until video is 5 seconds from over.")
+                    print(related_video)
+
+                    # Wait until video is close to over
+                    time.sleep(until_end_of_vid)
 
                 case _:
-                    # Find link for related video
-                    exit(1)
-                    # Click
-                    # Wait for Title to Change
-                    # Get Data and Process Again
-                    # Parse through titles for related videos
-                    # Store title above threshold to related video
+                    try:
+                        # Find and click chosen related video
+                        try:
+                            title_str = only_click_video(logger, driver, related_click=True, title_str=related_video)
+                            clicks += 1
+                        except:
+                                print(traceback.format_exc())
+                                exit(1)
+
+                        # Get video object
+                        video_obj = get_video_object(driver, logger, title_str)
+
+                        # Start Timer
+                        parse_start = datetime.now()
+
+                        # Parse the video object for ads 
+                        ad_index, new_processed, duplicates_processed, length, ad_presence = process_data(video_obj, ad_index, clicks, search, profile, date)
+
+                        # Update globals
+                        new += new_processed
+                        duplicates += duplicates_processed
+
+                        # Parse through titles of related videos for like videos
+                        related_video = find_related_video(driver, search, title_str)
+
+                        # Determine Ad Length
+                        if ad_presence:
+                            length_of_ads = determine_ad_length(video_obj)
+                        else:
+                            length_of_ads = 0
+
+                        # End Timer
+                        parse_end = datetime.now()
+
+                        # Math out how long to wait and wait
+                        total_time = length + length_of_ads
+                        delta = parse_end - parse_start
+                        until_end_of_vid = total_time - delta.total_seconds() - 5 #reduce an extra 5 seconds as buffer
+                        logger.info(f"Waiting {until_end_of_vid} seconds until video is 5 seconds from over.")
+
+                        # Wait until video is close to over
+                        time.sleep(until_end_of_vid)
+                    
+                    # If we error anywhere, just reset search
+                    except Exception as e:
+                        print(e)
+                        related_video = None
+
     # Print end statement
+    logger.info(f"""Finished monitoring for {time_target} hours. During this monitoring session, we located:
+                {duplicates} - Duplicate Ads
+                {new} - New Ads
+                """)
     exit(1)
 
 

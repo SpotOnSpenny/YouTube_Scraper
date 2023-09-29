@@ -54,7 +54,7 @@ def search_for_term(logger, driver, search_term):
             search_results = driver.find_elements(
                 By.CSS_SELECTOR, "ytd-video-renderer.ytd-item-section-renderer"
             )
-            title_str = only_click_video(logger, driver, search_results, False)
+            title_str = only_click_video(logger, driver, videos=search_results, related_click=False)
             break
         except:
             if num == 5:
@@ -63,7 +63,7 @@ def search_for_term(logger, driver, search_term):
             logger.error(
                 f"Attempt {num}/5 - A problem occured clicking search result, retrying"
             )
-    pass
+    return title_str
 
 
 def find_related_video(driver, search_term, title_str):
@@ -79,6 +79,7 @@ def find_related_video(driver, search_term, title_str):
                 # Return None and add to don't click if no related videos
                 if num == 5:
                     dont_click.append(title_str)
+                    print(dont_click)
                     return None
                 # Else, wait 2 seconds for load
                 time.sleep(2)
@@ -92,7 +93,7 @@ def find_related_video(driver, search_term, title_str):
             # Check likeness to the search term
             likeness = fuzz.partial_token_sort_ratio(search_term, title)
             # see if likeness is the highest
-            if likeness > highest_ratio and title and likeness > 50:
+            if likeness > highest_ratio and likeness > 50 and title not in watched and title not in dont_click:
                 highest_ratio = likeness
                 chosen_title = title
         # Pass to next video if object reference is stale
@@ -100,7 +101,7 @@ def find_related_video(driver, search_term, title_str):
             pass
     return chosen_title
 
-def only_click_video(logger, driver, videos, related_click=False, search_term=None, ):
+def only_click_video(logger, driver, videos=None, related_click=False, title_str=None):
     if related_click == False:  # if first search and click, click a random video
         for num, index in enumerate(range(1, 6)):
             try:
@@ -127,36 +128,28 @@ def only_click_video(logger, driver, videos, related_click=False, search_term=No
                     f"Attempt {num}/5 - A problem occured picking a random video title, retrying with current list"
                 )
 
-    else:  # if clicking related video, process provided video titles to click best fit TODO when we get to related vids
-        chosen_video = None
-        chosen_title = ""
-        highest_ratio = 0
-        for video in videos:
-            try:  # if element is stale pass through to next one
-                title = video.find_element(
-                    By.ID, "video-title"
-                ).text  # get video title\
-                likeness = fuzz.partial_token_sort_ratio(
-                    search_term, title
-                )  # compare video title to original search term
-                if likeness > highest_ratio and title:
-                    highest_ratio = likeness
-                    chosen_video = video
-                    chosen_title = title
-            except:
-                pass
-        if chosen_video == None:
-            raise Exception("Error finding like video, restarting")
-        else:
-            print(
-                "Found video with {} likeness, with the title {}".format(
-                    highest_ratio, title
+    else:  # if clicking related video, process provided video titles to click best fit 
+        for num, index in enumerate(range(1, 6)):
+            try:
+                titles = driver.find_elements(
+                    By.XPATH, f"//a/h3/span[@id='video-title']"
                 )
-            )
+                for title in titles:
+                    if title.text == title_str:
+                        chosen_title = title.find_element(By.XPATH, "../..")              
+                break
+            except Exception as e:
+                print("EXCEPTION")
+                print(e)
+                if num == 5:
+                    logger.error("Attempt 5/5 - Could not locate related video by title, starting search from 0")
+                    exit(1)
+                logger.warn(f"Attempt {num}/5 - A problem ocured locating the related video by title, retrying")
 
     for num, index in enumerate(range(1, 6)):  # get link of video
         try:
             link = chosen_title.get_attribute("href")
+            print(link)
             break
         except Exception as e:
             if num == 5:
@@ -167,9 +160,17 @@ def only_click_video(logger, driver, videos, related_click=False, search_term=No
             logger.warn(
                 f"Attempt {num}/5 - A problem occured getting the video link, regrabbing element to retry"
             )
-            chosen_title = driver.find_element(
-                By.XPATH, f"//a/yt-formatted-string[text()='{title_str}']"
-            )
+            if related_click == False:
+                chosen_title = driver.find_element(
+                    By.XPATH, f"//a/yt-formatted-string[text()='{title_str}']"
+                )
+            else:
+                titles = driver.find_elements(
+                    By.XPATH, f"//a/h3/span[@id='video-title']"
+                )
+                for title in titles:
+                    if title.text == title_str:
+                        chosen_title = title.find_element(By.XPATH, "../..") 
 
     if "watch" in link:  # check the link to see if it's a video
         for num, index in enumerate(range(1, 6)):
@@ -194,15 +195,18 @@ def only_click_video(logger, driver, videos, related_click=False, search_term=No
     else:
         logger.info("Random video selected was not a valid video, raising error to retry")
         dont_click.append(title_str)
+        print(dont_click)
         raise Exception("Video was invalid, retry")
 
     # Re-Do if video was unavailable, add to do not click list, and retry
     try:
         WebDriverWait(driver, 10).until(EC.title_contains(title_str))
         watched.append(title_str)
+        print(watched)
         return(title_str)
     except:
         dont_click.append(title_str)
+        print(dont_click)
         raise Exception("video likely unavailable")
 
 def get_video_object(driver, logger, title_str):
@@ -215,14 +219,21 @@ def get_video_object(driver, logger, title_str):
                 'return document.getElementById("movie_player")?.getPlayerResponse()'
             )
             return response
-        except Exception as e:
+        except:
             if num == 5:
                 logger.error(
                     "Attempt 5/5 - Could not get the video object, adding to do not click list to try again"
                 )
                 dont_click.append(title_str)
+                print(dont_click)
                 driver.back()
                 raise AttributeError  # TODO Create custom error types (though it's not in logs so it doesn't REALLY matter)
             logger.warn(
                 f"Attempt {num}/5 - A problem occured getting the video object, retrying"
             )
+
+def reset_globals():
+    global watched
+    global dont_click
+    watched = []
+    dont_click = []
