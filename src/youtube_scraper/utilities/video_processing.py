@@ -9,11 +9,6 @@ from termcolor import colored
 
 # ----- Look for Index -----
 def find_index(logger):
-    # ----- Colored Messages -----
-    no_index = colored("No ad index found, creating one instead!", "magenta")
-    index_found = colored("Found ad index!", "magenta")
-
-    # ----- Script -----
     working_directory = os.getcwd()  # get current directory
     index_file_path = os.path.join(
         working_directory, "youtube_scraper/downloaded_ads/ad_index.csv"
@@ -21,7 +16,6 @@ def find_index(logger):
     try:  # try to open the index csv for ads
         dataframe = pandas.read_csv(index_file_path)  # open the index
         logger.info("Index found! Using existing csv.")
-        print(index_found)
     except:  # create the index csv if one not found
         target_dir = os.path.join(working_directory, "youtube_scraper/downloaded_ads")
         if not os.path.exists(target_dir):
@@ -57,13 +51,11 @@ def find_values(obj, *keys):
 
 # Process the video object for values we want
 def process_data(response, ad_index, clicks, search_term, profile, date):
-    print("processing...")
     new = 0
     duplicates = 0
     #locate the ads
     ads = list(find_values(response, "instreamVideoAdRenderer"))  # determine if an ad exists on the video
     if ads == []:  # when there are no ads, move on
-        print("NO ADS")
         vid_data = list(find_values(response, "videoDetails"))
         video_specifics = vid_data[0]
         length = int(video_specifics["lengthSeconds"])
@@ -81,10 +73,8 @@ def process_data(response, ad_index, clicks, search_term, profile, date):
                 continue #continue if it's not the right type of item
             if ad_index["Ad ID"].str.contains(ad_id).any(): 
                 duplicates += 1
-                print("duplicate")
             else:
                 new += 1
-                print("new")
             try:
                 endpoint = ad["clickthroughEndpoint"]["urlEndpoint"]["url"]
             except:

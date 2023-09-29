@@ -96,7 +96,7 @@ def monitor(logger, time_target, profile):
                             video_obj = get_video_object(driver, logger, title_str)
                             break
                         except Exception as e:
-                            print(e)
+                            logger.debug(e)
                             if num == 5:
                                 logger.error(
                                     "Attempt 5/5 - Could not grab first video data, exiting"
@@ -133,7 +133,6 @@ def monitor(logger, time_target, profile):
                     delta = parse_end - parse_start
                     until_end_of_vid = total_time - delta.total_seconds() - 5 #reduce an extra 5 seconds as buffer
                     logger.info(f"Waiting {until_end_of_vid} seconds until video is 5 seconds from over.")
-                    print(related_video)
 
                     # Wait until video is close to over
                     time.sleep(until_end_of_vid)
@@ -141,12 +140,9 @@ def monitor(logger, time_target, profile):
                 case _:
                     try:
                         # Find and click chosen related video
-                        try:
-                            title_str = only_click_video(logger, driver, related_click=True, title_str=related_video)
-                            clicks += 1
-                        except:
-                                print(traceback.format_exc())
-                                exit(1)
+                        title_str = only_click_video(logger, driver, related_click=True, title_str=related_video)
+                        clicks += 1
+
 
                         # Get video object
                         video_obj = get_video_object(driver, logger, title_str)
@@ -184,7 +180,7 @@ def monitor(logger, time_target, profile):
                     
                     # If we error anywhere, just reset search
                     except Exception as e:
-                        print(e)
+                        logger.debug(e)
                         related_video = None
 
     # Print end statement
@@ -192,6 +188,10 @@ def monitor(logger, time_target, profile):
                 {duplicates} - Duplicate Ads
                 {new} - New Ads
                 """)
+    print(f"""Finished monitoring for {time_target} hours. During this monitoring session, we located:
+            {duplicates} - Duplicate Ads
+            {new} - New Ads
+            """)
     exit(1)
 
 
