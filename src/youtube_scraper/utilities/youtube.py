@@ -66,7 +66,7 @@ def search_for_term(logger, driver, search_term):
     return title_str
 
 
-def find_related_video(driver, search_term, title_str):
+def find_related_video(driver, logger, search_term, title_str):
     # Get related videos
     for num, index in enumerate(range(1,6)):
         related_videos = []
@@ -99,6 +99,10 @@ def find_related_video(driver, search_term, title_str):
         # Pass to next video if object reference is stale
         except:
             pass
+    if chosen_title == None:
+        logger.info("No related title with at least 50 percent match, restarting search")
+    else:
+        logger.info(f"Selected {chosen_title} with {highest_ratio} likeness, clicking")
     return chosen_title
 
 def only_click_video(logger, driver, videos=None, related_click=False, title_str=None):
@@ -116,7 +120,6 @@ def only_click_video(logger, driver, videos=None, related_click=False, title_str
                     title_str = chosen_title.text
                     if title_str not in watched and title_str not in dont_click:
                         valid_video_found = True
-                print(f"chose video: {title_str} on attempt {num}")
                 break
             except:
                 if num == 5:
@@ -154,7 +157,7 @@ def only_click_video(logger, driver, videos=None, related_click=False, title_str
         except Exception as e:
             if num == 5:
                 logger.error(
-                    "Attempt 5/5 - Could get the link of the chosen video, raising error to re-grab list"
+                    "Attempt 5/5 - Could not get the link of the chosen video, raising error to re-grab list"
                 )
                 raise AttributeError  # TODO Create custom error types (though it's not in logs so it doesn't REALLY matter)
             logger.warn(

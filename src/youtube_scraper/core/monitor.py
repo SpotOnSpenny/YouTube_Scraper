@@ -4,12 +4,12 @@
 import logging
 from logging.handlers import SysLogHandler
 import os
-import traceback
 from datetime import datetime, timedelta
 import json
 from itertools import chain
 import time
 from pytz import timezone
+from math import trunc
 
 # ----- Internal Dependencies -----
 from youtube_scraper.utilities.driver import start_webdriver
@@ -117,7 +117,7 @@ def monitor(logger, time_target, profile):
                     duplicates += duplicates_processed
 
                     # Parse through titles of related videos for like videos
-                    related_video = find_related_video(driver, search, title_str)
+                    related_video = find_related_video(driver, logger, search, title_str)
 
                     # Determine Ad Length
                     if ad_presence:
@@ -131,7 +131,9 @@ def monitor(logger, time_target, profile):
                     # Math out how long to wait and wait
                     total_time = length + length_of_ads
                     delta = parse_end - parse_start
-                    until_end_of_vid = total_time - delta.total_seconds() - 5 #reduce an extra 5 seconds as buffer
+                    until_end_of_vid = trunc(total_time - delta.total_seconds() - 5) #reduce an extra 5 seconds as buffer
+                    if until_end_of_vid > 1200:
+                        until_end_of_vid = 1200
                     logger.info(f"Waiting {until_end_of_vid} seconds until video is 5 seconds from over.")
 
                     # Wait until video is close to over
@@ -158,7 +160,7 @@ def monitor(logger, time_target, profile):
                         duplicates += duplicates_processed
 
                         # Parse through titles of related videos for like videos
-                        related_video = find_related_video(driver, search, title_str)
+                        related_video = find_related_video(driver, logger, search, title_str)
 
                         # Determine Ad Length
                         if ad_presence:
@@ -172,7 +174,9 @@ def monitor(logger, time_target, profile):
                         # Math out how long to wait and wait
                         total_time = length + length_of_ads
                         delta = parse_end - parse_start
-                        until_end_of_vid = total_time - delta.total_seconds() - 5 #reduce an extra 5 seconds as buffer
+                        until_end_of_vid = trunc(total_time - delta.total_seconds() - 5) #reduce an extra 5 seconds as buffer
+                        if until_end_of_vid > 1200:
+                            until_end_of_vid = 1200
                         logger.info(f"Waiting {until_end_of_vid} seconds until video is 5 seconds from over.")
 
                         # Wait until video is close to over

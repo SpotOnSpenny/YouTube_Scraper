@@ -44,11 +44,11 @@ def main():
     # ----- Set Up Logging -----
     if args["--remote"]:  # if specified, start logging remotely
         logger = start_logger(
-            args["<log_level>"], args["<profile>"], "remote", port=int(args["<port>"])
+            args["<log_level>"].lower(), args["<profile>"].upper(), "remote", port=int(args["<port>"])
         )
     else:  # if else, start logging by file
         logger = start_logger(
-            args["<log_level>"], args["<profile>"], "file", filename=args["<file_name>"]
+            args["<log_level>"].lower(), args["<profile>"].upper(), "file", filename=args["<file_name>"]
         )
 
     # ----- Monitor -----
@@ -62,7 +62,9 @@ def main():
                 if arg == "<profile>":
                     if args[arg].capitalize() == "None":
                         args[arg] = None
-                    if args[arg] in allowed_profiles:
+                        needed.remove(arg)
+                    elif args[arg].upper() in allowed_profiles:
+                        args[arg] = args[arg].upper()
                         needed.remove(arg)
                 if arg == "<monitor_time>":
                     if args[arg].isdigit():  # check that target is a number

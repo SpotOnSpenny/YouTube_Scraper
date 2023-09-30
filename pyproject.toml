@@ -27,7 +27,8 @@ dependencies = [
 "InquirerPy",
 "gdown",
 "docopt",
-"thefuzz"
+"thefuzz",
+"pytz"
 ]
 
 [project.scripts]
