@@ -50,6 +50,13 @@ def start_webdriver(profile):
     driver.get("https://youtube.com")
     return driver
 
+def check_for_driver(driver):
+    try:
+        driver.current_url
+        return True
+    except:
+        return False
+
 
 if __name__ == "__main__":
     start_webdriver(None)

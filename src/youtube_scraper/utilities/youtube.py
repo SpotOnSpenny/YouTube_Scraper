@@ -102,7 +102,7 @@ def find_related_video(driver, logger, search_term, title_str):
     if chosen_title == None:
         logger.info("No related title with at least 50 percent match, restarting search")
     else:
-        logger.info(f"Selected {chosen_title} with {highest_ratio} likeness, clicking")
+        logger.info(f"Selected {chosen_title} with {highest_ratio} likeness for the next click")
     return chosen_title
 
 def only_click_video(logger, driver, videos=None, related_click=False, title_str=None):
@@ -120,6 +120,7 @@ def only_click_video(logger, driver, videos=None, related_click=False, title_str
                     title_str = chosen_title.text
                     if title_str not in watched and title_str not in dont_click:
                         valid_video_found = True
+                        logger.info(f"Selected video {title_str}, clicking")
                 break
             except:
                 if num == 5:

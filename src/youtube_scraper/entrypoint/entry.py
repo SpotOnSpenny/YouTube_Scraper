@@ -58,7 +58,9 @@ def main():
         needed = ["<profile>", "<monitor_time>"]
         allowed_profiles = ["4M", "4F", "6M", "7F", "9F", "10M", "18M", "18F", None]
         for arg in required:
+            print(args)
             if args[arg]:
+                print(arg, args[arg])
                 if arg == "<profile>":
                     if args[arg].capitalize() == "None":
                         args[arg] = None
@@ -97,7 +99,7 @@ def interactive_mode(mode, args, needed):
                 "9F",
                 "10M",
                 "18M",
-                "18F"
+                "18F",
                 "None",
             ],
         ).execute()
