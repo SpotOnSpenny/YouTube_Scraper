@@ -7,6 +7,7 @@ from InquirerPy import inquirer
 # ----- Internal Dependencies -----
 from youtube_scraper.utilities.logger import start_logger
 from youtube_scraper.core.monitor import monitor
+from youtube_scraper.core.test import test
 
 
 def main():
@@ -17,6 +18,7 @@ def main():
     Usage:
         m2k_scrape monitor -l <log_level> [-r <port> | -c <file_name>] [-p <profile>] [-t <monitor_time>]
         m2k_scrape collect -l <log_level> [-r <port> | -c <file_name>] [-p <profile>] [-n <number>]
+        m2k_scrape test -l <log_level> [-r <port> | -c <file_name>] [-p <profile>] [-t <monitor_time>]
         m2k_scrape json
         m2k_scrape (-h | -v)
 
@@ -73,13 +75,37 @@ def main():
                         if 1 <= int(args[arg]):  # check that target is greater than 0
                             args[arg] = int(args[arg])
                             needed.remove(arg)
-    args = interactive_mode("monitor", args, needed)
-    # Start monitor function
-    monitor(logger, args["<monitor_time>"], args["<profile>"])
+        args = interactive_mode("monitor", args, needed)
+        # Start monitor function
+        monitor(logger, args["<monitor_time>"], args["<profile>"])
 
     # ----- Collect -----
 
     # ----- Convert Ads to JSON -----
+
+    # ----- Testing -----
+    if args["test"]:
+        required = ["<profile>", "<monitor_time>"]
+        needed = ["<profile>", "<monitor_time>"]
+        allowed_profiles = ["4M", "4F", "6M", "7F", "9F", "10M", "18M", "18F", None]
+        for arg in required:
+            print(args)
+            if args[arg]:
+                print(arg, args[arg])
+                if arg == "<profile>":
+                    if args[arg].capitalize() == "None":
+                        args[arg] = None
+                        needed.remove(arg)
+                    elif args[arg].upper() in allowed_profiles:
+                        args[arg] = args[arg].upper()
+                        needed.remove(arg)
+                if arg == "<monitor_time>":
+                    if args[arg].isdigit():  # check that target is a number
+                        if 1 <= int(args[arg]):  # check that target is greater than 0
+                            args[arg] = int(args[arg])
+                            needed.remove(arg)
+        args = interactive_mode("monitor", args, needed)
+        test(logger, args["<monitor_time>"], args["<profile>"])
 
 
 def interactive_mode(mode, args, needed):
