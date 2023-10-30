@@ -81,7 +81,7 @@ def test(logger, time_target, profile):
             try:
                 # Open up web browser with provided profile if one is not open already
                 if not check_for_driver(driver):
-                    for num, index  in enumerate(range(1, 6)):
+                    for num, index  in enumerate(range(1, 6), 1):
                         try:
                             driver = start_webdriver(profile)
                             logger.info("Webdriver successfully started")
@@ -98,7 +98,7 @@ def test(logger, time_target, profile):
 
                 match related_video:
                     case None:
-                        for num, index in enumerate(range(1, 6)):
+                        for num, index in enumerate(range(1, 6), 1):
                             try:
                                 # Set current date
                                 date = datetime.now(tz=timezone("MST")).date()

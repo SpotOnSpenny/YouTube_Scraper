@@ -73,24 +73,22 @@ def monitor(logger, time_target, profile):
             try:
                 # Open up web browser with provided profile if one is not open already
                 if not check_for_driver(driver):
-                    for num, index  in enumerate(range(1, 6)):
+                    for num, index  in enumerate(range(1, 6), 1):
                         try:
                             driver = start_webdriver(profile)
                             logger.info("Webdriver successfully started")
                             break
                         except Exception as e:
                             if num == 5:
-                                logger.critical(
-                                    "Attempt 5/5 - Could not start webdriver"
-                                )
+                                logger.critical(f"Attempt 5/5 - Could not start webdriver: {e}")
                                 raise Exception("Couldn't start driver, shutting down to restart")
                             logger.error(
-                                f"Attempt {num}/5 - A problem occured starting the webdriver, retrying"
+                                f"Attempt {num}/5 - A problem occured starting the webdriver: {e}"
                             )
 
                 match related_video:
                     case None:
-                        for num, index in enumerate(range(1, 6)):
+                        for num, index in enumerate(range(1, 6), 1):
                             try:
                                 # Set current date
                                 date = datetime.now(tz=timezone("MST")).date()
@@ -194,8 +192,8 @@ def monitor(logger, time_target, profile):
             
             #if we error out, quit and restart from scratch with current search
             except Exception as e:
+                logger.info(f"Error occured - {e}")
                 if check_for_driver(driver):
-                    logger.info(f"Error occured - {e}")
                     driver.quit()
                 pass
 

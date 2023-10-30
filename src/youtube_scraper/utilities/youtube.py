@@ -15,7 +15,7 @@ dont_click = []
 
 def search_for_term(logger, driver, search_term):
     # locate search bar
-    for num, index in enumerate(range(1, 6)):
+    for num, index in enumerate(range(1, 6), 1):
         try:
             search_bar = WebDriverWait(driver, timeout=5).until(
                 EC.element_to_be_clickable((By.NAME, "search_query"))
@@ -31,7 +31,7 @@ def search_for_term(logger, driver, search_term):
                 f"Attempt {num}/5 - A problem occured finding search bar, retrying"
             )
     # use search bar to look for term
-    for num, index in enumerate(range(1, 6)):
+    for num, index in enumerate(range(1, 6), 1):
         try:
             search_bar.clear()
             search_bar.send_keys(search_term)
@@ -49,7 +49,7 @@ def search_for_term(logger, driver, search_term):
                 f"Attempt {num}/5 - A problem occured on initial search, retrying"
             )
     # find search results and click the video
-    for num, index in enumerate(range(1, 6)):
+    for num, index in enumerate(range(1, 6), 1):
         try:
             search_results = driver.find_elements(
                 By.CSS_SELECTOR, "ytd-video-renderer.ytd-item-section-renderer"
@@ -107,7 +107,7 @@ def find_related_video(driver, logger, search_term, title_str):
 
 def only_click_video(logger, driver, videos=None, related_click=False, title_str=None):
     if related_click == False:  # if first search and click, click a random video
-        for num, index in enumerate(range(1, 6)):
+        for num, index in enumerate(range(1, 6), 1):
             try:
                 valid_video_found = False
                 while not valid_video_found:
@@ -133,7 +133,7 @@ def only_click_video(logger, driver, videos=None, related_click=False, title_str
                 )
 
     else:  # if clicking related video, process provided video titles to click best fit 
-        for num, index in enumerate(range(1, 6)):
+        for num, index in enumerate(range(1, 6), 1):
             try:
                 titles = driver.find_elements(
                     By.XPATH, f"//a/h3/span[@id='video-title']"
@@ -150,7 +150,7 @@ def only_click_video(logger, driver, videos=None, related_click=False, title_str
                     exit(1)
                 logger.warn(f"Attempt {num}/5 - A problem ocured locating the related video by title, retrying")
 
-    for num, index in enumerate(range(1, 6)):  # get link of video
+    for num, index in enumerate(range(1, 6), 1):  # get link of video
         try:
             link = chosen_title.get_attribute("href")
             print(link)
@@ -177,7 +177,7 @@ def only_click_video(logger, driver, videos=None, related_click=False, title_str
                         chosen_title = title.find_element(By.XPATH, "../..") 
 
     if "watch" in link:  # check the link to see if it's a video
-        for num, index in enumerate(range(1, 6)):
+        for num, index in enumerate(range(1, 6), 1):
             try:  # try to click thumbnail if it is a video
                 WebDriverWait(driver, timeout=5).until(
                     EC.element_to_be_clickable(chosen_title)

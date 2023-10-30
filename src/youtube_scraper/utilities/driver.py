@@ -45,8 +45,8 @@ def start_webdriver(profile):
     options.add_argument("--mute-audio")
     try:
         driver = webdriver.Chrome(service=service, options=options)
-    except:
-        raise StartupError("Error starting chrome webdriver")
+    except Exception as e:
+        raise StartupError(f"Error starting chrome webdriver: {e}")
     driver.get("https://youtube.com")
     return driver
 
