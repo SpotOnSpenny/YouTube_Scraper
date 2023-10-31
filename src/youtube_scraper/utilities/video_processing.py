@@ -2,10 +2,16 @@
 import os
 import json
 from math import trunc
+import time
 
 # ----- External Dependencies -----
 import pandas
 from termcolor import colored
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 # ----- Look for Index -----
 def find_index(logger):
@@ -56,11 +62,23 @@ def process_data(response, ad_index, clicks, search_term, profile, date):
     #locate the ads
     ads = list(find_values(response, "instreamVideoAdRenderer"))  # determine if an ad exists on the video
     if ads == []:  # when there are no ads, move on
-        vid_data = list(find_values(response, "videoDetails"))
-        video_specifics = vid_data[0]
+        vid_data = find_values(response, "videoDetails", "isFamilySafe")
+        video_specifics, family_safe = vid_data
         length = int(video_specifics["lengthSeconds"])
         ad_presence = False
-        return ad_index, new, duplicates, length, ad_presence
+        ad_metadata = [{
+            "Date Collected": date,
+            "Ad ID": "TBD",
+            "Profile Used": profile,
+            "Clicks Deep": clicks,
+            "Found on Search": search_term,
+            "Ad Endpoint": "TBD",
+            "Found on Video": video_specifics["title"],
+            "Posting Channel": video_specifics["author"],
+            "Family Safe": str(family_safe),
+            "Downloaded": False,
+        }]
+        return ad_index, new, duplicates, length, ad_presence, ad_metadata
     else:  # when there are ads, find data about the video they're once
         ad_presence = True
         vid_data = find_values(response, "videoDetails", "isFamilySafe")
@@ -93,10 +111,10 @@ def process_data(response, ad_index, clicks, search_term, profile, date):
                     "Downloaded": False,
                 }
             ]
-            ad_metadata = pandas.DataFrame(ad_metadata)
-            ad_index = pandas.concat([ad_index, ad_metadata], ignore_index=True)
+            ad_metadata_df = pandas.DataFrame(ad_metadata)
+            ad_index = pandas.concat([ad_index, ad_metadata_df], ignore_index=True)
         ad_index.to_csv(path_or_buf="./youtube_scraper/downloaded_ads/ad_index.csv", index=False)  # save CSV incase of error
-        return ad_index, new, duplicates, length, ad_presence
+        return ad_index, new, duplicates, length, ad_presence, ad_metadata
 
 
 def determine_ad_length(video_obj):
@@ -126,3 +144,45 @@ def determine_ad_length(video_obj):
                         ads_length += ad_len
     ads_length = ads_length/1000
     return trunc(ads_length)
+
+def id_mid_post(driver, action):
+    #Locate the Ad ID
+    try: #Look to see if it can find the ID without any extra steps
+        raw_id = driver.find_element(By.CLASS_NAME, "ytp-sfn-cpn").text
+        ad_id = raw_id.split(" / ")[0]
+    except: #If unable to locate, open "Stats for nerds" so that ad info exists on the page
+        video_player = driver.find_element(By.CLASS_NAME, "ad-created")
+        action.context_click(video_player).perform()
+        context_menu = driver.find_elements(By.CLASS_NAME, "ytp-menuitem-label")
+        for menu_item in context_menu:
+            if menu_item.text == "Stats for nerds":
+                menu_item.click()
+        raw_id_element = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CLASS_NAME, "ytp-sfn-cpn")))
+        ad_id = raw_id_element.text.split(" / ")[0]
+    #Locate the Ad Endpoint
+    try:
+        ad_endpoint = driver.find_element(By.CSS_SELECTOR, "button.ytp-ad-visit-advertiser-button").text
+    except:
+        ad_endpoint = "Endpoint Unavailable, See ad for more information"
+    return ad_id, ad_endpoint
+
+def process_mid_post(ad_index, ad_id, ad_endpoint, ad_metadata):
+    #instantiate processing vars
+    new = 0
+    duplicates = 0
+
+    #add to new/duplicates
+    if ad_index["Ad ID"].str.contains(ad_id).any(): 
+        duplicates += 1
+    else:
+        new += 1
+
+    #change metadata for the new ad
+    ad_metadata[0]["Ad ID"] = ad_id
+    ad_metadata[0]["Ad Endpoint"] = ad_endpoint
+
+    #Save new metadata to index
+    ad_metadata_df = pandas.DataFrame(ad_metadata)
+    ad_index = pandas.concat([ad_index, ad_metadata_df], ignore_index=True)
+    ad_index.to_csv(path_or_buf="./youtube_scraper/downloaded_ads/ad_index.csv", index=False)  # save CSV incase of error
+    return ad_index, new, duplicates

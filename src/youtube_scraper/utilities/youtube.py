@@ -37,7 +37,7 @@ def search_for_term(logger, driver, search_term):
             search_bar.send_keys(search_term)
             search_bar.send_keys(Keys.RETURN)
             WebDriverWait(driver, timeout=5).until(EC.title_contains(search_term))
-            logger.info(f"Search for {search_term} complete")
+            logger.info(f"Conducting search for {search_term}")
             break
         except:
             if num == 5:
@@ -68,7 +68,7 @@ def search_for_term(logger, driver, search_term):
 
 def find_related_video(driver, logger, search_term, title_str):
     # Get related videos
-    for num, index in enumerate(range(1,6)):
+    for num, index in enumerate(range(1,6), 1):
         related_videos = []
         # Set up retry
         while len(related_videos) < 10:
@@ -79,7 +79,6 @@ def find_related_video(driver, logger, search_term, title_str):
                 # Return None and add to don't click if no related videos
                 if num == 5:
                     dont_click.append(title_str)
-                    print(dont_click)
                     return None
                 # Else, wait 2 seconds for load
                 time.sleep(2)
@@ -153,7 +152,6 @@ def only_click_video(logger, driver, videos=None, related_click=False, title_str
     for num, index in enumerate(range(1, 6), 1):  # get link of video
         try:
             link = chosen_title.get_attribute("href")
-            print(link)
             break
         except Exception as e:
             if num == 5:
@@ -199,22 +197,19 @@ def only_click_video(logger, driver, videos=None, related_click=False, title_str
     else:
         logger.info("Random video selected was not a valid video, raising error to retry")
         dont_click.append(title_str)
-        print(dont_click)
         raise Exception("Video was invalid, retry")
 
     # Re-Do if video was unavailable, add to do not click list, and retry
     try:
         WebDriverWait(driver, 10).until(EC.title_contains(title_str))
         watched.append(title_str)
-        print(watched)
         return(title_str)
     except:
         dont_click.append(title_str)
-        print(dont_click)
         raise Exception("video likely unavailable")
 
 def get_video_object(driver, logger, title_str):
-    for num, index in enumerate(range(1,6)):
+    for num, index in enumerate(range(1,6), 1):
         try:
             WebDriverWait(driver, timeout=5).until(
                 EC.visibility_of_element_located((By.ID, "movie_player"))
@@ -229,7 +224,6 @@ def get_video_object(driver, logger, title_str):
                     "Attempt 5/5 - Could not get the video object, adding to do not click list to try again"
                 )
                 dont_click.append(title_str)
-                print(dont_click)
                 driver.back()
                 raise AttributeError  # TODO Create custom error types (though it's not in logs so it doesn't REALLY matter)
             logger.warn(

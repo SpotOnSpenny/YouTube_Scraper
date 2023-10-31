@@ -1,8 +1,9 @@
 # ----- External Dependencies -----
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 # ----- Python Standard Library -----
-import logging
-from logging.handlers import SysLogHandler
 import os
 from datetime import datetime, timedelta
 import json
@@ -14,7 +15,7 @@ from math import trunc
 # ----- Internal Dependencies -----
 from youtube_scraper.utilities.driver import start_webdriver, check_for_driver
 from youtube_scraper.utilities.youtube import search_for_term, get_video_object, find_related_video, only_click_video, reset_globals
-from youtube_scraper.utilities.video_processing import find_index, process_data, determine_ad_length
+from youtube_scraper.utilities.video_processing import find_index, process_data, determine_ad_length, id_mid_post, process_mid_post
 
 # ----- Environment Setup -----
 #set up tracking vars
@@ -75,15 +76,17 @@ def monitor(logger, time_target, profile):
                 if not check_for_driver(driver):
                     for num, index  in enumerate(range(1, 6), 1):
                         try:
-                            driver = start_webdriver(profile)
+                            driver, action = start_webdriver(profile)
                             logger.info("Webdriver successfully started")
                             break
                         except Exception as e:
                             if num == 5:
-                                logger.critical(f"Attempt 5/5 - Could not start webdriver: {e}")
+                                logger.critical(
+                                    "Attempt 5/5 - Could not start webdriver"
+                                )
                                 raise Exception("Couldn't start driver, shutting down to restart")
                             logger.error(
-                                f"Attempt {num}/5 - A problem occured starting the webdriver: {e}"
+                                f"Attempt {num}/5 - A problem occured starting the webdriver, retrying"
                             )
 
                 match related_video:
@@ -113,9 +116,10 @@ def monitor(logger, time_target, profile):
                         parse_start = datetime.now()
 
                         # Parse the video object for ads 
-                        ad_index, new_processed, duplicates_processed, length, ad_presence = process_data(video_obj, ad_index, clicks, search, profile, date)
+                        ad_index, new_processed, duplicates_processed, length, ad_presence, ad_metadata = process_data(video_obj, ad_index, clicks, search, profile, date)
 
                         # Update globals
+                        ads_on_video = new_processed + duplicates_processed
                         new += new_processed
                         duplicates += duplicates_processed
 
@@ -132,15 +136,82 @@ def monitor(logger, time_target, profile):
                         parse_end = datetime.now()
 
                         # Math out how long to wait and wait
-                        total_time = length + length_of_ads
                         delta = parse_end - parse_start
-                        until_end_of_vid = trunc(total_time - delta.total_seconds() - 5) #reduce an extra 5 seconds as buffer
+                        until_end_of_vid = trunc(length - delta.total_seconds() - 5) #reduce an extra 5 seconds as buffer
                         if until_end_of_vid > 1200:
                             until_end_of_vid = 1200
-                        logger.info(f"Waiting {until_end_of_vid} seconds until video is 5 seconds from over.")
+                        logger.info(f"Waiting {until_end_of_vid} seconds until next video.")
 
-                        # Wait until video is close to over
-                        time.sleep(until_end_of_vid)
+                        #wait for pre-roll ads to be over
+                        time.sleep(length_of_ads)
+
+                        # Wait until video is close to over, check for ads consistently while waiting
+                        current_time = datetime.now()
+                        wait_until = current_time + timedelta(seconds=until_end_of_vid)
+                        while datetime.now() < wait_until:
+                            #see if ads are running
+                            try:
+                                WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "div.ytp-ad-player-overlay")))
+
+                                #try to find multiple ads if they are running
+                                try:
+                                    number_of_ads = driver.find_element(By.CLASS_NAME, "ytp-ad-simple-ad-badge").text.split()
+                                    ads_served = int(number_of_ads[3])
+                                except: #Except may not be needed, need to see what 1 ad looks like
+                                    ads_served = 1
+                                
+                                #find which ad we're on now
+                                current_ad = int(driver.find_element(By.CLASS_NAME, "ytp-ad-simple-ad-badge").text.split()[1])
+                                process_or_not = True
+
+                                #process each ad
+                                while current_ad <= ads_served:
+                                    if process_or_not:
+                                        #get ad ID and endpoint
+                                        ad_id, ad_endpoint = id_mid_post(driver, action)
+
+                                        #process new ads and add to spreadsheet
+                                        ad_index, new_processed, duplicates_processed = process_mid_post(ad_index, ad_id, ad_endpoint, ad_metadata)
+
+                                        #update globals
+                                        new += new_processed
+                                        duplicates += duplicates_processed
+                                        ads_on_video += new_processed + duplicates_processed
+
+                                        #update search vars
+                                        next_ad = current_ad + 1
+                                        next_ad_text = f"{next_ad} of {ads_served}"
+
+                                        #set not process while we wait for next ad
+                                        process_or_not = False
+
+                                    #wait for ad to change to next, and restart loop
+                                    try:
+                                        WebDriverWait(driver, 5).until(EC.text_to_be_present_in_element((By.CLASS_NAME,"ytp-ad-simple-ad-badge"), next_ad_text))
+                                        process_or_not = True
+                                        current_ad += 1
+                                    #skip directly to waiting if ad doesn't change over in time
+                                    except:
+                                        #break the loop if we've hit the end
+                                        if current_ad == ads_served:
+                                            current_ad += 1
+
+                                #wait for ad to stop being shown before we resume scanning for another
+                                ad_showing = True
+                                while ad_showing:
+                                    try:
+                                        #if ad showing, wait 5 seconds and look again
+                                        driver.find_element(By.CSS_SELECTOR, "div.ytp-ad-player-overlay")
+                                        time.sleep(5)
+                                    except:
+                                        ad_showing = False
+                                        pass
+
+                            except:
+                                pass
+                        
+                        # log how many ads found on the video before 
+                        logger.info(f"{ads_on_video} ads were found on this video, moving onto the next video now.")
 
                     case _:
                         try:
@@ -156,11 +227,12 @@ def monitor(logger, time_target, profile):
                             parse_start = datetime.now()
 
                             # Parse the video object for ads 
-                            ad_index, new_processed, duplicates_processed, length, ad_presence = process_data(video_obj, ad_index, clicks, search, profile, date)
+                            ad_index, new_processed, duplicates_processed, length, ad_presence, ad_metadata = process_data(video_obj, ad_index, clicks, search, profile, date)
 
                             # Update globals
                             new += new_processed
                             duplicates += duplicates_processed
+                            ads_on_video = new_processed + duplicates_processed
 
                             # Parse through titles of related videos for like videos
                             related_video = find_related_video(driver, logger, search, title_str)
@@ -175,16 +247,84 @@ def monitor(logger, time_target, profile):
                             parse_end = datetime.now()
 
                             # Math out how long to wait and wait
-                            total_time = length + length_of_ads
                             delta = parse_end - parse_start
-                            until_end_of_vid = trunc(total_time - delta.total_seconds() - 5) #reduce an extra 5 seconds as buffer
+                            until_end_of_vid = trunc(length - delta.total_seconds() - 5) #reduce an extra 5 seconds as buffer
                             if until_end_of_vid > 1200:
                                 until_end_of_vid = 1200
-                            logger.info(f"Waiting {until_end_of_vid} seconds until video is 5 seconds from over.")
+                            logger.info(f"Waiting {until_end_of_vid} seconds until next video.")
 
-                            # Wait until video is close to over
-                            time.sleep(until_end_of_vid)
-                        
+                            #wait for pre-roll ads to be over
+                            time.sleep(length_of_ads)
+
+                            # Wait until video is close to over, check for ads consistently while waiting
+                            current_time = datetime.now()
+                            wait_until = current_time + timedelta(seconds=until_end_of_vid)
+                            while datetime.now() < wait_until:
+                                #see if ads are running
+                                try:
+                                    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "div.ytp-ad-player-overlay")))
+
+                                    #try to find multiple ads if they are running
+                                    try:
+                                        number_of_ads = driver.find_element(By.CLASS_NAME, "ytp-ad-simple-ad-badge").text.split()
+                                        ads_served = int(number_of_ads[3])
+                                    except: #Except may not be needed, need to see what 1 ad looks like
+                                        ads_served = 1
+                                    
+                                    #find which ad we're on now
+                                    current_ad = int(driver.find_element(By.CLASS_NAME, "ytp-ad-simple-ad-badge").text.split()[1])
+                                    process_or_not = True
+
+                                    #process each ad
+                                    while current_ad <= ads_served:
+                                        if process_or_not:
+                                            #get ad ID and endpoint
+                                            ad_id, ad_endpoint = id_mid_post(driver, action)
+
+                                            #process new ads and add to spreadsheet
+                                            ad_index, new_processed, duplicates_processed = process_mid_post(ad_index, ad_id, ad_endpoint, ad_metadata)
+
+                                            #update globals
+                                            new += new_processed
+                                            duplicates += duplicates_processed
+                                            ads_on_video += new_processed + duplicates_processed
+
+                                            #update search vars
+                                            next_ad = current_ad + 1
+                                            next_ad_text = f"{next_ad} of {ads_served}"
+
+                                            #set not process while we wait for next ad
+                                            process_or_not = False
+
+                                        #wait for ad to change to next, and restart loop
+                                        try:
+                                            WebDriverWait(driver, 5).until(EC.text_to_be_present_in_element((By.CLASS_NAME,"ytp-ad-simple-ad-badge"), next_ad_text))
+                                            process_or_not = True
+                                            current_ad += 1
+                                        #skip directly to waiting if ad doesn't change over in time
+                                        except:
+                                            #break the loop if we've hit the end
+                                            if current_ad == ads_served:
+                                                current_ad += 1
+
+                                    #wait for ad to stop being shown before we resume scanning for another
+                                    ad_showing = True
+                                    while ad_showing:
+                                        try:
+                                            #if ad showing, wait 5 seconds and look again
+                                            driver.find_element(By.CSS_SELECTOR, "div.ytp-ad-player-overlay")
+                                            time.sleep(5)
+                                        except:
+                                            ad_showing = False
+                                            pass
+
+                                except:
+                                    pass
+                            
+                            # log how many ads found on the video before 
+                            logger.info(f"{ads_on_video} ads were found on this video, moving onto the next video now.")
+
+
                         # If we error anywhere, just reset search
                         except Exception as e:
                             logger.debug(e)
@@ -192,8 +332,8 @@ def monitor(logger, time_target, profile):
             
             #if we error out, quit and restart from scratch with current search
             except Exception as e:
-                logger.info(f"Error occured - {e}")
                 if check_for_driver(driver):
+                    logger.info(f"Error occured - {e}")
                     driver.quit()
                 pass
 
@@ -207,7 +347,3 @@ def monitor(logger, time_target, profile):
             {new} - New Ads
             """)
     exit(1)
-
-# ----- run for testing -----
-if __name__ == "__main__":
-    monitor(None, 0.1, None)

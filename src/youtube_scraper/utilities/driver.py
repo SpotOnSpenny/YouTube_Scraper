@@ -6,6 +6,7 @@ from selenium import webdriver
 from termcolor import colored
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver import ActionChains
 
 # ----- Internal Dependencies -----
 
@@ -48,7 +49,8 @@ def start_webdriver(profile):
     except Exception as e:
         raise StartupError(f"Error starting chrome webdriver: {e}")
     driver.get("https://youtube.com")
-    return driver
+    action = ActionChains(driver)
+    return driver, action
 
 def check_for_driver(driver):
     try:
