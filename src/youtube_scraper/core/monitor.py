@@ -154,6 +154,8 @@ def monitor(logger, time_target, profile):
                         # Determine Ad Length
                         if ad_presence:
                             length_of_ads = determine_ad_length(video_obj)
+                            # Wait an extra 20 seconds in case any ads have an end of ad CTA screen
+                            length_of_ads += 20
                         else:
                             length_of_ads = 0
 
@@ -314,6 +316,8 @@ def monitor(logger, time_target, profile):
                             # Determine Ad Length
                             if ad_presence:
                                 length_of_ads = determine_ad_length(video_obj)
+                                # add 20 seconds extra in case any of the ads have the ending CTA screen
+                                length_of_ads += 20
                             else:
                                 length_of_ads = 0
 
