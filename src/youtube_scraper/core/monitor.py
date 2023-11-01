@@ -194,15 +194,18 @@ def monitor(logger, time_target, profile):
                                         By.CLASS_NAME, "ytp-ad-simple-ad-badge"
                                     ).text.split()
                                     ads_served = int(number_of_ads[3])
+
+                                    # find which ad we're on now
+                                    current_ad = int(
+                                        driver.find_element(
+                                            By.CLASS_NAME, "ytp-ad-simple-ad-badge"
+                                        ).text.split()[1]
+                                    )
+                                # if an error occurs splitting, then just assume 1 ad served
                                 except:  # Except may not be needed, need to see what 1 ad looks like
                                     ads_served = 1
+                                    current_ad = 1
 
-                                # find which ad we're on now
-                                current_ad = int(
-                                    driver.find_element(
-                                        By.CLASS_NAME, "ytp-ad-simple-ad-badge"
-                                    ).text.split()[1]
-                                )
                                 process_or_not = True
 
                                 # process each ad
