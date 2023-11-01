@@ -211,8 +211,23 @@ def monitor(logger, time_target, profile):
                                 # process each ad
                                 while current_ad <= ads_served:
                                     if process_or_not:
-                                        # get ad ID and endpoint
-                                        ad_id, ad_endpoint = id_mid_post(driver, action)
+                                        #double check to ensure that the ad ID has changed to a new ad
+                                        valid_id = False
+                                        previous_id = None
+                                        while not valid_id:
+                                            #check 5 times to see if the ad_id we get is empty
+                                            for n, index in enumerate(range(1,6), 1):
+                                                ad_id, ad_endpoint = id_mid_post(
+                                                    driver, action
+                                                )
+                                                if ad_id != "empty_video":
+                                                    break
+                                                else:
+                                                    time.sleep(1)
+
+                                            if ad_id != previous_id:
+                                                valid_id = True
+                                                previous_id = ad_id
 
                                         # process new ads and add to spreadsheet
                                         (
@@ -378,6 +393,24 @@ def monitor(logger, time_target, profile):
                                     # process each ad
                                     while current_ad <= ads_served:
                                         if process_or_not:
+                                            #double check to ensure that the ad ID has changed to a new ad
+                                            valid_id = False
+                                            previous_id = None
+                                            while not valid_id:
+                                                #check 5 times to see if the ad_id we get is empty
+                                                for n, index in enumerate(range(1,6), 1):
+                                                    ad_id, ad_endpoint = id_mid_post(
+                                                        driver, action
+                                                    )
+                                                    if ad_id != "empty_video":
+                                                        break
+                                                    else:
+                                                        time.sleep(1)
+
+                                                if ad_id != previous_id:
+                                                    valid_id = True
+                                                    previous_id = ad_id
+
                                             # get ad ID and endpoint
                                             ad_id, ad_endpoint = id_mid_post(
                                                 driver, action
