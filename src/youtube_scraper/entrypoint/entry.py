@@ -7,7 +7,6 @@ from InquirerPy import inquirer
 # ----- Internal Dependencies -----
 from youtube_scraper.utilities.logger import start_logger
 from youtube_scraper.core.monitor import monitor
-from youtube_scraper.core.test import test
 
 
 def main():
@@ -45,11 +44,17 @@ def main():
     # ----- Set Up Logging -----
     if args["--remote"]:  # if specified, start logging remotely
         logger = start_logger(
-            args["<log_level>"].lower(), args["<profile>"].upper(), "remote", port=int(args["<port>"])
+            args["<log_level>"].lower(),
+            args["<profile>"].upper(),
+            "remote",
+            port=int(args["<port>"]),
         )
     else:  # if else, start logging by file
         logger = start_logger(
-            args["<log_level>"].lower(), args["<profile>"].upper(), "file", filename=args["<file_name>"]
+            args["<log_level>"].lower(),
+            args["<profile>"].upper(),
+            "file",
+            filename=args["<file_name>"],
         )
 
     # ----- Monitor -----
@@ -79,7 +84,6 @@ def main():
     # ----- Collect -----
 
     # ----- Convert Ads to JSON -----
-
 
 
 def interactive_mode(mode, args, needed):
