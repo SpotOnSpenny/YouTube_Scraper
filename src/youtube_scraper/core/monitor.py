@@ -173,8 +173,18 @@ def monitor(logger, time_target, profile):
                             f"Waiting {until_end_of_vid} seconds until next video."
                         )
 
+                        #if ad length is excessively long, don't wait for it and skip over ads instead
+                        if length_of_ads > 1200:
+                            skip_button = driver.find_element(By.CSS_SELECTOR, "button.ytp-ad-skip-button")
+                            for number, i in enumerate(range(1,6), 1):
+                                try:
+                                    skip_button.click()
+                                    length_of_ads = 0
+                                except:
+                                    time.sleep(5)
+
                         # wait for pre-roll ads to be over
-                        time.sleep(length_of_ads)
+                        #time.sleep(length_of_ads)
 
                         # Wait until video is close to over, check for ads consistently while waiting
                         current_time = datetime.now()
@@ -252,24 +262,50 @@ def monitor(logger, time_target, profile):
                                         # set not process while we wait for next ad
                                         process_or_not = False
 
-                                    # wait for ad to change to next, and restart loop
-                                    try:
-                                        WebDriverWait(driver, 5).until(
-                                            EC.text_to_be_present_in_element(
-                                                (
-                                                    By.CLASS_NAME,
-                                                    "ytp-ad-simple-ad-badge",
-                                                ),
-                                                next_ad_text,
+                                        #check duration remaining in ad, and skip ads if it's excessive and break loop
+                                        try:
+                                            length_of_ad = driver.find_element(By.CSS_SELECTOR, "span.ytp-ad-duration-remaining").text  
+                                            hms = length_of_ad.split(":")
+                                            #if ad has hours left
+                                            if len(hms) == 3:
+                                                hours = int(hms[0]) * 60 * 60
+                                                minutes = int(hms[1]) * 60
+                                                seconds = int(hms[2])
+                                            if len(hms) == 2:
+                                                hours = 0
+                                                minutes = int(hms[0]) * 60
+                                                seconds = int(hms[1])
+                                            length_of_ad = hours + minutes + seconds
+                                        except Exception as e:
+                                            lenght_of_ad = 0
+                                        if length_of_ad > 1200:
+                                            skip_button = driver.find_element(By.CSS_SELECTOR, "button.ytp-ad-skip-button")
+                                            for number, i in enumerate(range(1,6), 1):
+                                                try:
+                                                    skip_button.click()
+                                                    ads_served = 0
+                                                except:
+                                                    time.sleep(5)
+
+                                    if ads_served != 0:
+                                        # wait for ad to change to next, and restart loop
+                                        try:
+                                            WebDriverWait(driver, 5).until(
+                                                EC.text_to_be_present_in_element(
+                                                    (
+                                                        By.CLASS_NAME,
+                                                        "ytp-ad-simple-ad-badge",
+                                                    ),
+                                                    next_ad_text,
+                                                )
                                             )
-                                        )
-                                        process_or_not = True
-                                        current_ad += 1
-                                    # skip directly to waiting if ad doesn't change over in time
-                                    except:
-                                        # break the loop if we've hit the end
-                                        if current_ad == ads_served:
+                                            process_or_not = True
                                             current_ad += 1
+                                        # skip directly to waiting if ad doesn't change over in time
+                                        except:
+                                            # break the loop if we've hit the end
+                                            if current_ad == ads_served:
+                                                current_ad += 1
 
                                 # wait for ad to stop being shown before we resume scanning for another
                                 ad_showing = True
@@ -352,6 +388,16 @@ def monitor(logger, time_target, profile):
                             logger.info(
                                 f"Waiting {until_end_of_vid} seconds until next video."
                             )
+
+                            #if ad length is excessively long, don't wait for it and skip over ads instead
+                            if length_of_ads > 1200:
+                                skip_button = driver.find_element(By.CSS_SELECTOR, "button.ytp-ad-skip-button")
+                                for number, i in enumerate(range(1,6), 1):
+                                    try:
+                                        skip_button.click()
+                                        length_of_ads = 0
+                                    except:
+                                        time.sleep(5)
 
                             # wait for pre-roll ads to be over
                             time.sleep(length_of_ads)
@@ -442,24 +488,50 @@ def monitor(logger, time_target, profile):
                                             # set not process while we wait for next ad
                                             process_or_not = False
 
-                                        # wait for ad to change to next, and restart loop
-                                        try:
-                                            WebDriverWait(driver, 5).until(
-                                                EC.text_to_be_present_in_element(
-                                                    (
-                                                        By.CLASS_NAME,
-                                                        "ytp-ad-simple-ad-badge",
-                                                    ),
-                                                    next_ad_text,
+                                            #check duration remaining in ad, and skip ads if it's excessive and break loop
+                                            try:
+                                                length_of_ad = driver.find_element(By.CSS_SELECTOR, "span.ytp-ad-duration-remaining").text  
+                                                hms = length_of_ad.split(":")
+                                                #if ad has hours left
+                                                if len(hms) == 3:
+                                                    hours = int(hms[0]) * 60 * 60
+                                                    minutes = int(hms[1]) * 60
+                                                    seconds = int(hms[2])
+                                                if len(hms) == 2:
+                                                    hours = 0
+                                                    minutes = int(hms[0]) * 60
+                                                    seconds = int(hms[1])
+                                                    length_of_ad = hours + minutes + seconds
+                                            except Exception as e:
+                                                length_of_ad = 0                         
+                                            if length_of_ad > 1200:
+                                                skip_button = driver.find_element(By.CSS_SELECTOR, "button.ytp-ad-skip-button")
+                                                for number, i in enumerate(range(1,6), 1):
+                                                    try:
+                                                        skip_button.click()
+                                                        ads_served = 0
+                                                    except:
+                                                        time.sleep(5)
+
+                                        if ads_served != 0:
+                                            # wait for ad to change to next, and restart loop
+                                            try:
+                                                WebDriverWait(driver, 5).until(
+                                                    EC.text_to_be_present_in_element(
+                                                        (
+                                                            By.CLASS_NAME,
+                                                            "ytp-ad-simple-ad-badge",
+                                                        ),
+                                                        next_ad_text,
+                                                    )
                                                 )
-                                            )
-                                            process_or_not = True
-                                            current_ad += 1
-                                        # skip directly to waiting if ad doesn't change over in time
-                                        except:
-                                            # break the loop if we've hit the end
-                                            if current_ad == ads_served:
+                                                process_or_not = True
                                                 current_ad += 1
+                                            # skip directly to waiting if ad doesn't change over in time
+                                            except:
+                                                # break the loop if we've hit the end
+                                                if current_ad == ads_served:
+                                                    current_ad += 1
 
                                     # wait for ad to stop being shown before we resume scanning for another
                                     ad_showing = True
