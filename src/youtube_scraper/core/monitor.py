@@ -184,7 +184,7 @@ def monitor(logger, time_target, profile):
                                     time.sleep(5)
 
                         # wait for pre-roll ads to be over
-                        #time.sleep(length_of_ads)
+                        time.sleep(length_of_ads)
 
                         # Wait until video is close to over, check for ads consistently while waiting
                         current_time = datetime.now()
