@@ -83,7 +83,7 @@ def monitor(logger, time_target, profile):
         while datetime.now() < end_time:
             try:
                 # Open up web browser with provided profile if one is not open already
-                if not check_for_driver(driver):
+                if check_for_driver(driver) == False:
                     for num, index in enumerate(range(1, 6), 1):
                         try:
                             driver, action = start_webdriver(profile)
@@ -180,6 +180,7 @@ def monitor(logger, time_target, profile):
                                 try:
                                     skip_button.click()
                                     length_of_ads = 0
+                                    break
                                 except:
                                     time.sleep(5)
 
@@ -220,7 +221,7 @@ def monitor(logger, time_target, profile):
 
                                 # process each ad
                                 while current_ad <= ads_served:
-                                    if process_or_not:
+                                    if process_or_not == True:
                                         #double check to ensure that the ad ID has changed to a new ad
                                         valid_id = False
                                         previous_id = None
@@ -277,13 +278,15 @@ def monitor(logger, time_target, profile):
                                                 seconds = int(hms[1])
                                             length_of_ad = hours + minutes + seconds
                                         except Exception as e:
-                                            lenght_of_ad = 0
+                                            logger.warn(f"Exception occured getting ad time - hms was {hms} -{e}")
+                                            length_of_ad = 0
                                         if length_of_ad > 1200:
-                                            skip_button = driver.find_element(By.CSS_SELECTOR, "button.ytp-ad-skip-button")
                                             for number, i in enumerate(range(1,6), 1):
                                                 try:
+                                                    skip_button = driver.find_element(By.CSS_SELECTOR, "button.ytp-ad-skip-button")
                                                     skip_button.click()
                                                     ads_served = 0
+                                                    break
                                                 except:
                                                     time.sleep(5)
 
@@ -391,11 +394,12 @@ def monitor(logger, time_target, profile):
 
                             #if ad length is excessively long, don't wait for it and skip over ads instead
                             if length_of_ads > 1200:
-                                skip_button = driver.find_element(By.CSS_SELECTOR, "button.ytp-ad-skip-button")
                                 for number, i in enumerate(range(1,6), 1):
                                     try:
+                                        skip_button = driver.find_element(By.CSS_SELECTOR, "button.ytp-ad-skip-button")
                                         skip_button.click()
                                         length_of_ads = 0
+                                        break
                                     except:
                                         time.sleep(5)
 
@@ -438,7 +442,7 @@ def monitor(logger, time_target, profile):
 
                                     # process each ad
                                     while current_ad <= ads_served:
-                                        if process_or_not:
+                                        if process_or_not == True:
                                             #double check to ensure that the ad ID has changed to a new ad
                                             valid_id = False
                                             previous_id = None
@@ -501,15 +505,17 @@ def monitor(logger, time_target, profile):
                                                     hours = 0
                                                     minutes = int(hms[0]) * 60
                                                     seconds = int(hms[1])
-                                                    length_of_ad = hours + minutes + seconds
+                                                length_of_ad = hours + minutes + seconds
                                             except Exception as e:
-                                                length_of_ad = 0                         
+                                                logger.warn(f"Exception occured getting ad time - hms was {hms} -{e}")
+                                                length_of_ad = 0
                                             if length_of_ad > 1200:
-                                                skip_button = driver.find_element(By.CSS_SELECTOR, "button.ytp-ad-skip-button")
                                                 for number, i in enumerate(range(1,6), 1):
                                                     try:
+                                                        skip_button = driver.find_element(By.CSS_SELECTOR, "button.ytp-ad-skip-button")
                                                         skip_button.click()
                                                         ads_served = 0
+                                                        break
                                                     except:
                                                         time.sleep(5)
 
@@ -562,7 +568,7 @@ def monitor(logger, time_target, profile):
 
             # if we error out, quit and restart from scratch with current search
             except Exception as e:
-                if check_for_driver(driver):
+                if check_for_driver(driver) == True:
                     logger.info(f"Error occured - {e}")
                     driver.quit()
                 pass
