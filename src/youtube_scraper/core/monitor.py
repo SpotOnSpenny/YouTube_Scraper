@@ -64,9 +64,6 @@ def monitor(logger, time_target, profile):
     # Math out how long to search for each term based on time_target
     time_per_search = round(time_target * 60 / len(search_terms))
 
-    # Set driver to none for first run so that it gets opened
-    driver = None
-
     # For each search term
     for search in search_terms:
         # Start Timer
@@ -74,6 +71,9 @@ def monitor(logger, time_target, profile):
 
         # Set related video to none to start
         related_video = None
+
+        # Set driver to false for startup
+        driver = False
 
         # Reset global vars to empty lists
         reset_globals()
@@ -106,7 +106,7 @@ def monitor(logger, time_target, profile):
                         for num, index in enumerate(range(1, 6), 1):
                             try:
                                 # Set current date
-                                date = datetime.now(tz=timezone("MST")).date()
+                                date = datetime.now(tz=timezone("MST"))
                                 # Make Search and Click Vid
                                 title_str = search_for_term(logger, driver, search)
                                 clicks += 1
@@ -138,7 +138,7 @@ def monitor(logger, time_target, profile):
                             ad_presence,
                             ad_metadata,
                         ) = process_data(
-                            video_obj, ad_index, clicks, search, profile, date
+                            video_obj, ad_index, clicks, search, profile, driver
                         )
 
                         # Update globals
@@ -175,13 +175,24 @@ def monitor(logger, time_target, profile):
 
                         #if ad length is excessively long, don't wait for it and skip over ads instead
                         if length_of_ads > 1200:
-                            skip_button = driver.find_element(By.CSS_SELECTOR, "button.ytp-ad-skip-button")
                             for number, i in enumerate(range(1,6), 1):
                                 try:
+                                    skip_button = driver.find_element(By.CSS_SELECTOR, "button.ytp-ad-skip-button-modern")
                                     skip_button.click()
                                     length_of_ads = 0
+                                    logger.info("Ads skipped because they were longer than 20 minutes in length")
                                     break
                                 except:
+                                    if number == 5:
+                                        logger.error(
+                                            "Attempt 5/5 - Could not skip pre-roll ads"
+                                        )
+                                        raise Exception(
+                                            "Could not skip pre-roll ads, shutting down to restart"
+                                        )
+                                    logger.warn(
+                                        f"Attempt {number}/5 - Could not skip pre-roll ads, likely no button present yet"
+                                    )
                                     time.sleep(5)
 
                         # wait for pre-roll ads to be over
@@ -283,11 +294,22 @@ def monitor(logger, time_target, profile):
                                         if length_of_ad > 1200:
                                             for number, i in enumerate(range(1,6), 1):
                                                 try:
-                                                    skip_button = driver.find_element(By.CSS_SELECTOR, "button.ytp-ad-skip-button")
+                                                    skip_button = driver.find_element(By.CSS_SELECTOR, "button.ytp-ad-skip-button-modern")
                                                     skip_button.click()
                                                     ads_served = 0
+                                                    logger.info("Ads skipped because they were longer than 20 minutes in length")
                                                     break
                                                 except:
+                                                    if number == 5:
+                                                        logger.error(
+                                                            "Attempt 5/5 - Could not skip mid/post roll ads"
+                                                        )
+                                                        raise Exception(
+                                                            "Could not skip ads, restarting"
+                                                        )
+                                                    logger.warn(
+                                                        f"Attempt {number}/5 - Could not skip mid/post-roll ads, likely no button present yet"
+                                                    )
                                                     time.sleep(5)
 
                                     if ads_served != 0:
@@ -323,8 +345,11 @@ def monitor(logger, time_target, profile):
                                         ad_showing = False
                                         pass
 
-                            except:
-                                pass
+                            except Exception as e:
+                                if "Could not skip" in str(e):
+                                    raise Exception(f"Resarting - {e}")
+                                else:
+                                    pass
 
                         # log how many ads found on the video before
                         logger.info(
@@ -357,7 +382,7 @@ def monitor(logger, time_target, profile):
                                 ad_presence,
                                 ad_metadata,
                             ) = process_data(
-                                video_obj, ad_index, clicks, search, profile, date
+                                video_obj, ad_index, clicks, search, profile, driver
                             )
 
                             # Update globals
@@ -396,11 +421,21 @@ def monitor(logger, time_target, profile):
                             if length_of_ads > 1200:
                                 for number, i in enumerate(range(1,6), 1):
                                     try:
-                                        skip_button = driver.find_element(By.CSS_SELECTOR, "button.ytp-ad-skip-button")
+                                        skip_button = driver.find_element(By.CSS_SELECTOR, "button.ytp-ad-skip-button-modern")
                                         skip_button.click()
                                         length_of_ads = 0
                                         break
                                     except:
+                                        if number == 5:
+                                            logger.error(
+                                                "Attempt 5/5 - Could not skip ads"
+                                            )
+                                            raise Exception(
+                                                "Could not skip ads, restarting"
+                                            )
+                                        logger.warn(
+                                            f"Attempt {number}/5 - Could not skip pre-roll ads, likely no button present yet"
+                                        )
                                         time.sleep(5)
 
                             # wait for pre-roll ads to be over
@@ -512,11 +547,21 @@ def monitor(logger, time_target, profile):
                                             if length_of_ad > 1200:
                                                 for number, i in enumerate(range(1,6), 1):
                                                     try:
-                                                        skip_button = driver.find_element(By.CSS_SELECTOR, "button.ytp-ad-skip-button")
+                                                        skip_button = driver.find_element(By.CSS_SELECTOR, "button.ytp-ad-skip-button-modern")
                                                         skip_button.click()
                                                         ads_served = 0
                                                         break
                                                     except:
+                                                        if number == 5:
+                                                            logger.error(
+                                                                "Attempt 5/5 - Could not skip ads"
+                                                            )
+                                                            raise Exception(
+                                                                "Could not skip mid/post roll ads, restarting"
+                                                            )
+                                                        logger.warn(
+                                                            f"Attempt {number}/5 - Could not skip mid/post-roll ads, likely no button present yet"
+                                                        )
                                                         time.sleep(5)
 
                                         if ads_served != 0:
@@ -553,8 +598,11 @@ def monitor(logger, time_target, profile):
                                             ad_showing = False
                                             pass
 
-                                except:
-                                    pass
+                                except Exception as e:
+                                    if "Could not skip" in str(e):
+                                        raise Exception(f"Resarting - {e}")
+                                    else:
+                                        pass
 
                             # log how many ads found on the video before
                             logger.info(

@@ -3,6 +3,8 @@ import os
 import json
 from math import trunc
 import time
+from datetime import datetime
+from pytz import timezone
 
 # ----- External Dependencies -----
 import pandas
@@ -36,6 +38,7 @@ def find_index(logger):
                 "Clicks Deep",
                 "Ad Endpoint",
                 "Found on Video",
+                "Link to Video",
                 "Posting Channel",
                 "Family Safe",
                 "Downloaded",
@@ -56,7 +59,7 @@ def find_values(obj, *keys):
         yield from find_values(child, *keys)
 
 # Process the video object for values we want
-def process_data(response, ad_index, clicks, search_term, profile, date):
+def process_data(response, ad_index, clicks, search_term, profile, driver):
     new = 0
     duplicates = 0
     #locate the ads
@@ -67,13 +70,14 @@ def process_data(response, ad_index, clicks, search_term, profile, date):
         length = int(video_specifics["lengthSeconds"])
         ad_presence = False
         ad_metadata = [{
-            "Date Collected": date,
+            "Date Collected": datetime.now(tz=timezone("MST")).strftime("%Y-%m-%d %H:%M:%S"),
             "Ad ID": "TBD",
             "Profile Used": profile,
             "Clicks Deep": clicks,
             "Found on Search": search_term,
             "Ad Endpoint": "TBD",
             "Found on Video": video_specifics["title"],
+            "Link to Video": driver.current_url,
             "Posting Channel": video_specifics["author"],
             "Family Safe": str(family_safe),
             "Downloaded": False,
@@ -99,13 +103,14 @@ def process_data(response, ad_index, clicks, search_term, profile, date):
                 endpoint = "no endpoint"
             ad_metadata = [
                 {
-                    "Date Collected": date,
+                    "Date Collected": datetime.now(tz=timezone("MST")).strftime("%Y-%m-%d %H:%M:%S"),
                     "Ad ID": ad_id,
                     "Profile Used": profile,
                     "Clicks Deep": clicks,
                     "Found on Search": search_term,
                     "Ad Endpoint": endpoint,
                     "Found on Video": video_specifics["title"],
+                    "Link to Video": driver.current_url,
                     "Posting Channel": video_specifics["author"],
                     "Family Safe": str(family_safe),
                     "Downloaded": False,
@@ -180,6 +185,7 @@ def process_mid_post(ad_index, ad_id, ad_endpoint, ad_metadata):
     #change metadata for the new ad
     ad_metadata[0]["Ad ID"] = ad_id
     ad_metadata[0]["Ad Endpoint"] = ad_endpoint
+    ad_metadata[0]["Date Collected"] =  datetime.now(tz=timezone("MST")).strftime("%Y-%m-%d %H:%M:%S")
 
     #Save new metadata to index
     ad_metadata_df = pandas.DataFrame(ad_metadata)

@@ -1,6 +1,7 @@
 # ----- Python Standard Library -----
 import random
 import time
+import json
 
 # ----- External Dependencies -----
 from selenium import webdriver
@@ -239,6 +240,7 @@ def get_video_object(driver, logger, title_str):
             response = driver.execute_script(
                 'return document.getElementById("movie_player")?.getPlayerResponse()'
             )
+
             return response
         except:
             if num == 5:
