@@ -64,6 +64,9 @@ def monitor(logger, time_target, profile):
     # Math out how long to search for each term based on time_target
     time_per_search = round(time_target * 60 / len(search_terms))
 
+    # Set Driver to false for first run through
+    driver = False
+
     # For each search term
     for search in search_terms:
         # Start Timer
@@ -71,9 +74,6 @@ def monitor(logger, time_target, profile):
 
         # Set related video to none to start
         related_video = None
-
-        # Set driver to false for startup
-        driver = False
 
         # Reset global vars to empty lists
         reset_globals()
@@ -105,8 +105,6 @@ def monitor(logger, time_target, profile):
                     case None:
                         for num, index in enumerate(range(1, 6), 1):
                             try:
-                                # Set current date
-                                date = datetime.now(tz=timezone("MST"))
                                 # Make Search and Click Vid
                                 title_str = search_for_term(logger, driver, search)
                                 clicks += 1
