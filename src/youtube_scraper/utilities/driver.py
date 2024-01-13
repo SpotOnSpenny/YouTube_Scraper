@@ -32,7 +32,7 @@ def start_webdriver(profile):
         case "6M":
             options.add_argument(r"--profile-directory=Profile 6")
         case "7F":
-            options.add_argument(r"--profile-directory=Profile 7")
+            options.add_argument(r"--profile-directory=Profile 11")
         case "9F":
             options.add_argument(r"--profile-directory=Profile 2")
         case "10M":
@@ -47,6 +47,7 @@ def start_webdriver(profile):
     try:
         driver = webdriver.Chrome(service=service, options=options)
     except Exception as e:
+        print(f"Error starting chrome webdriver: {e}")
         raise StartupError(f"Error starting chrome webdriver: {e}")
     driver.get("https://youtube.com")
     action = ActionChains(driver)
@@ -61,4 +62,4 @@ def check_for_driver(driver):
 
 
 if __name__ == "__main__":
-    start_webdriver(None)
+    start_webdriver("7F")
