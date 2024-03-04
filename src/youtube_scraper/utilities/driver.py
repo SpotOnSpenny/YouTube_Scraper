@@ -30,17 +30,17 @@ def start_webdriver(profile):
         case "4M":
             options.add_argument(r"--profile-directory=Profile 5")
         case "6M":
-            options.add_argument(r"--profile-directory=Profile 6")
+            options.add_argument(r"--profile-directory=Profile 3")
         case "7F":
             options.add_argument(r"--profile-directory=Profile 11")
         case "9F":
             options.add_argument(r"--profile-directory=Profile 2")
         case "10M":
-            options.add_argument(r"--profile-directory=Profile 3")
+            options.add_argument(r"--profile-directory=Default")
         case "18M":
-            options.add_argument(r"--profile-directory=Profile ")
+            options.add_argument(r"--profile-directory=Profile 12")
         case "18F":
-            options.add_argument(r"--profile-directory=Profile ")
+            options.add_argument(r"--profile-directory=Default")
         case _:
             options.arguments[:] = []
     options.add_argument("--mute-audio")
@@ -62,4 +62,4 @@ def check_for_driver(driver):
 
 
 if __name__ == "__main__":
-    start_webdriver("7F")
+    start_webdriver("18M")
