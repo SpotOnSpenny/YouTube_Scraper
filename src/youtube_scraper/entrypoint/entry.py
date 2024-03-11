@@ -3,10 +3,12 @@ from docopt import docopt
 from InquirerPy import inquirer
 
 # ----- Python Standard Library -----
+import os
 
 # ----- Internal Dependencies -----
 from youtube_scraper.utilities.logger import start_logger
 from youtube_scraper.core.monitor import monitor
+from youtube_scraper.core.convert_to_json import convert_to_json
 
 
 def main():
@@ -17,7 +19,7 @@ def main():
     Usage:
         m2k_scrape monitor -l <log_level> [-r <port> | -c <file_name>] [-p <profile>] [-t <monitor_time>]
         m2k_scrape collect -l <log_level> [-r <port> | -c <file_name>] [-p <profile>] [-n <number>]
-        m2k_scrape json
+        m2k_scrape json -f <folder_path>
         m2k_scrape (-h | -v)
 
     Options:
@@ -29,6 +31,7 @@ def main():
         -n, --number        Specify the number of ads you'd like to collect. If not specified, interactive mode will be used.
         -h, --help          Provides (this) explanation of options and arguments for the utility.
         -v, --version       Provides the current version of the script installed.
+        -f, --folder-path   The absolute path to the folder containing the .csv files that you'd like to convert to .json files.
 
     Arguments:
         <log_level>         The level of logs you'd like to be logged. Can be: 'debug', 'info', 'warn', 'error' or 'critical'.
@@ -36,30 +39,30 @@ def main():
         <file_name>         The name of the .txt file that you'd like to log to in the /logs folder of the worknig directory. If none specified, will save to a .txt named todays date.
         <profile>           The age/gender profile you'd like to use. Can be: 'None', '4M', '4F', '6M', '7F', '9F', '10M', '18M' or '18F'.
         <number>            The number of ads that you'd like to search for. Must be an integer.
-        <monitor_time>              The number of hours that you'd like to monitor ads for. Must be an integer.
+        <monitor_time>      The number of hours that you'd like to monitor ads for. Must be an integer.
     """
     # ----- Create Args Dictionary -----
     args = docopt(usage, version="0.0.5")
 
-    # ----- Set Up Logging -----
-    if args["--remote"]:  # if specified, start logging remotely
-        logger = start_logger(
-            args["<log_level>"].lower(),
-            args["<profile>"].upper(),
-            "remote",
-            port=int(args["<port>"]),
-        )
-    else:  # if else, start logging by file
-        logger = start_logger(
-            args["<log_level>"].lower(),
-            args["<profile>"].upper(),
-            "file",
-            filename=args["<file_name>"],
-        )
-
     # ----- Monitor -----
     # Check to ensure nessescary information was provided, and start interactive mode if it was not
     if args["monitor"]:
+        # ----- Set Up Logging -----
+        if args["--remote"]:  # if specified, start logging remotely
+            logger = start_logger(
+                args["<log_level>"].lower(),
+                args["<profile>"].upper(),
+                "remote",
+                port=int(args["<port>"]),
+            )
+        else:  # if else, start logging by file
+            logger = start_logger(
+                args["<log_level>"].lower(),
+                args["<profile>"].upper(),
+                "file",
+                filename=args["<file_name>"],
+            )
+
         required = ["<profile>", "<monitor_time>"]
         needed = ["<profile>", "<monitor_time>"]
         allowed_profiles = ["4M", "4F", "6M", "7F", "9F", "10M", "18M", "18F", None]
@@ -84,6 +87,28 @@ def main():
     # ----- Collect -----
 
     # ----- Convert Ads to JSON -----
+    if args["json"]:
+        # Check to ensure the filepath was provided
+        if not args["<folder_path>"]:
+            print(
+                "JSON mode was selected, but the folder path was not provided! Please provide the folder path and try again."
+            )
+            quit(1)
+        # Check if the folder path is valid
+        else:
+            if not os.path.exists(args["<folder_path>"]):
+                print(
+                    "JSON mode was selected, but the folder path provided was invalid! Please provide a valid folder path and try again."
+                )
+                quit(1)
+            else:
+                for filepath in os.listdir(args["<folder_path>"]):
+                    if filepath.endswith(".csv"):
+                        convert_to_json(f"{args['<folder_path>']}/{filepath}")
+                print("Conversion complete! See the folder provided for processed JSON files.")
+
+
+
 
 
 def interactive_mode(mode, args, needed):
